@@ -101,36 +101,32 @@ app.post("/login", async (req, res) => {
     const email = req.body.username;
     const password = req.body.password;
 
-    // 1. Find the user in the database
-    const result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
-    
+    const result = await db.query("SELECT * FROM users WHERE email = $1", [
+      email,
+    ]);
+
     if (result.rows.length === 0) {
       return res.status(401).json({ message: "Invalid email or password." });
     }
 
     const user = result.rows[0];
-
-    // 2. Compare the hashed password using bcrypt
     const isMatch = await bcrypt.compare(password, user.password);
-    
+
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid email or password." });
     }
 
-    // 3. Log the user in (this function is provided by Passport to manage the cookie)
     req.logIn(user, (err) => {
       if (err) {
         console.error("Session creation error:", err);
         return res.status(500).json({ message: "Session creation failed." });
       }
 
-      // 4. Send success data back to React
       return res.status(200).json({
         message: "Login successful",
         user: { id: user.id, email: user.email },
       });
     });
-
   } catch (err) {
     console.error("Login error:", err);
     return res.status(500).json({ message: "Internal server error." });
@@ -165,7 +161,7 @@ app.post("/register", async (req, res) => {
 
           req.login(user, (err) => {
             if (err) {
-              console.error("Error creating session:", err)
+              console.error("Error creating session:", err);
               return res.status(500).json({
                 message:
                   "Registration successful, but session creation failed.",
@@ -181,7 +177,7 @@ app.post("/register", async (req, res) => {
     }
   } catch (err) {
     console.error(err);
-    
+
     return res.status(500).json({ message: "Internal server error." });
   }
 });
@@ -219,34 +215,36 @@ passport.use(
 );
 
 app.post("/forgot-password", async (req, res) => {
-  const email = req.body.username; 
+  const email = req.body.username;
 
   try {
-    
-    const userResult = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+    const userResult = await db.query("SELECT * FROM users WHERE email = $1", [
+      email,
+    ]);
     if (userResult.rows.length === 0) {
-      return res.status(200).json({ message: "If that email exists, a reset link was sent." });
+      return res
+        .status(200)
+        .json({ message: "If that email exists, a reset link was sent." });
     }
 
     const token = crypto.randomBytes(20).toString("hex");
-    const expireTime = Date.now() + 3600000; 
+    const expireTime = Date.now() + 3600000;
 
     await db.query(
       "UPDATE users SET reset_password_token = $1, reset_password_expires = $2 WHERE email = $3",
-      [token, expireTime, email]
+      [token, expireTime, email],
     );
 
     const transporter = nodemailer.createTransport({
-      service: "Gmail", 
+      service: "Gmail",
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS, 
+        pass: process.env.EMAIL_PASS,
       },
     });
 
-    
     const resetURL = `http://localhost:5173/reset-password/${token}`;
-    
+
     const mailOptions = {
       to: email,
       from: process.env.EMAIL_USER,
@@ -258,14 +256,14 @@ app.post("/forgot-password", async (req, res) => {
     };
 
     await transporter.sendMail(mailOptions);
-    return res.status(200).json({ message: "Password reset email sent successfully." });
-
+    return res
+      .status(200)
+      .json({ message: "Password reset email sent successfully." });
   } catch (err) {
     console.error("Forgot password error:", err);
     return res.status(500).json({ message: "Internal server error." });
   }
 });
-
 
 app.post("/reset-password/:token", async (req, res) => {
   const token = req.params.token;
@@ -273,31 +271,34 @@ app.post("/reset-password/:token", async (req, res) => {
   const currentTime = Date.now();
 
   try {
-    
     const result = await db.query(
       "SELECT * FROM users WHERE reset_password_token = $1 AND reset_password_expires > $2",
-      [token, currentTime]
+      [token, currentTime],
     );
 
-   
     if (result.rows.length === 0) {
-      return res.status(400).json({ message: "Password reset token is invalid or has expired." });
+      return res
+        .status(400)
+        .json({ message: "Password reset token is invalid or has expired." });
     }
 
     const user = result.rows[0];
     bcrypt.hash(newPassword, saltRounds, async (err, hash) => {
       if (err) {
         console.error("Error hashing new password:", err);
-        return res.status(500).json({ message: "Error securing new password." });
+        return res
+          .status(500)
+          .json({ message: "Error securing new password." });
       }
 
-   
       await db.query(
         "UPDATE users SET password = $1, reset_password_token = NULL, reset_password_expires = NULL WHERE email = $2",
-        [hash, user.email]
+        [hash, user.email],
       );
 
-      return res.status(200).json({ message: "Password updated successfully." });
+      return res
+        .status(200)
+        .json({ message: "Password updated successfully." });
     });
   } catch (err) {
     console.error("Reset password error:", err);

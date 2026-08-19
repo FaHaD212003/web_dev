@@ -6,13 +6,13 @@ export default function Home() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Ensure axios sends the session cookie with every request
+ 
   axios.defaults.withCredentials = true;
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Ping the backend to verify the session
+        
         const response = await axios.get("http://localhost:3000/home");
 
         if (response.status === 200 && response.data.authenticated) {
@@ -20,7 +20,6 @@ export default function Home() {
         }
       } catch (err) {
         console.error("Authentication failed:", err);
-        // If the server returns a 401 (Unauthorized), redirect to login
         window.location.href = "/login";
       } finally {
         setIsLoading(false);
@@ -32,7 +31,6 @@ export default function Home() {
 
   const handleLogout = async () => {
     try {
-      // Call the backend to destroy the session and clear the cookie
       await axios.post("http://localhost:3000/logout");
       window.location.href = "/login";
     } catch (err) {
@@ -40,7 +38,6 @@ export default function Home() {
     }
   };
 
-  // Show a loading state while checking the session to prevent layout shift
   if (isLoading) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-white">
@@ -51,12 +48,11 @@ export default function Home() {
     );
   }
 
-  // If the user object is missing after loading, don't render the dashboard
   if (!user) return null;
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white font-sans flex flex-col">
-      {/* Top Navigation Bar */}
+    
       <header className="flex items-center justify-between px-8 py-5 border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-black tracking-tighter">Regulate.</h1>
@@ -78,9 +74,8 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Main Dashboard Content */}
       <main className="flex-1 flex flex-col w-full relative">
-        {/* Welcome Header */}
+    
         <div className="w-full max-w-7xl mx-auto px-8 py-12 pb-0 z-10">
           <h2 className="text-4xl font-bold text-white mb-2">Welcome back.</h2>
           <p className="text-zinc-400 text-lg">
@@ -88,12 +83,8 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Circular Gallery Section */}
         <div className="flex-1 relative w-full flex items-center justify-center mt-[-40px]">
-          {/* 
-            The gallery container requires a fixed height. 
-            Adjust this based on how large you want the 3D canvas to be.
-          */}
+          
           <div style={{ height: "600px", width: "100%", position: "relative" }}>
             <CircularGallery
               bend={1.5}
@@ -102,12 +93,6 @@ export default function Home() {
               scrollEase={0.05}
               font="bold 30px Orbitron"
               scrollSpeed={2.5}
-              // If you updated your CircularGallery.jsx to accept an 'items' prop:
-              // items={[
-              //   "/gallery/asset-1.jpg",
-              //   "/gallery/asset-2.jpg",
-              //   "/gallery/asset-3.jpg"
-              // ]}
             />
           </div>
         </div>
