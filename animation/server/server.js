@@ -95,33 +95,46 @@ app.get(
     res.redirect("http://localhost:5173/home");
   },
 );
-app.post("/login", (req, res, next) => {
-  passport.authenticate("local", (err, user, info) => {
-    if (err) {
-      console.error("Login error:", err);
-      return res.status(500).json({ message: "Internal server error." });
+
+app.post("/login", async (req, res) => {
+  try {
+    const email = req.body.username;
+    const password = req.body.password;
+
+    // 1. Find the user in the database
+    const result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+    
+    if (result.rows.length === 0) {
+      return res.status(401).json({ message: "Invalid email or password." });
     }
 
-    if (!user) {
-      return res
-        .status(401)
-        .json({ message: info?.message || "Invalid email or password." });
+    const user = result.rows[0];
+
+    // 2. Compare the hashed password using bcrypt
+    const isMatch = await bcrypt.compare(password, user.password);
+    
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid email or password." });
     }
 
+    // 3. Log the user in (this function is provided by Passport to manage the cookie)
     req.logIn(user, (err) => {
       if (err) {
         console.error("Session creation error:", err);
-        return res
-          .status(500)
-          .json({ message: "Login successful, but session creation failed." });
+        return res.status(500).json({ message: "Session creation failed." });
       }
 
+      // 4. Send success data back to React
       return res.status(200).json({
         message: "Login successful",
         user: { id: user.id, email: user.email },
       });
     });
-  })(req, res, next);
+
+  } catch (err) {
+    console.error("Login error:", err);
+    return res.status(500).json({ message: "Internal server error." });
+  }
 });
 
 app.post("/register", async (req, res) => {
@@ -133,7 +146,6 @@ app.post("/register", async (req, res) => {
       email,
     ]);
 
-    // 1. If user exists, send a 409 Conflict status instead of redirecting
     if (checkResult.rows.length > 0) {
       return res
         .status(409)
@@ -142,7 +154,7 @@ app.post("/register", async (req, res) => {
       bcrypt.hash(password, saltRounds, async (err, hash) => {
         if (err) {
           console.error("Error hashing password:", err);
-          // 2. Handle hash errors gracefully
+
           return res.status(500).json({ message: "Error securing password." });
         } else {
           const result = await db.query(
@@ -153,15 +165,12 @@ app.post("/register", async (req, res) => {
 
           req.login(user, (err) => {
             if (err) {
-              console.error("Error creating session:", err);
-              // 3. Handle session failures
+              console.error("Error creating session:", err)
               return res.status(500).json({
                 message:
                   "Registration successful, but session creation failed.",
               });
             }
-
-            // 4. Send a 201 Created status with the user data back to React
             return res.status(201).json({
               message: "Registration successful",
               user: { id: user.id, email: user.email },
@@ -172,53 +181,17 @@ app.post("/register", async (req, res) => {
     }
   } catch (err) {
     console.error(err);
-    // 5. Catch database or general server errors
+    
     return res.status(500).json({ message: "Internal server error." });
   }
 });
 
-passport.use(
-  "local",
-  new Strategy(async function verify(username, password, cb) {
-    try {
-      const result = await db.query("SELECT * FROM users WHERE email = $1", [
-        username,
-      ]);
-
-      if (result.rows.length > 0) {
-        const user = result.rows[0];
-        const storedHashedPassword = user.password;
-
-        bcrypt.compare(password, storedHashedPassword, (err, valid) => {
-          if (err) {
-            console.error("Error comparing passwords:", err);
-            return cb(err);
-          } else {
-            if (valid) {
-              return cb(null, user);
-            } else {
-              // UPDATED: Return false instead of an error for a bad password
-              return cb(null, false, { message: "Incorrect password" });
-            }
-          }
-        });
-      } else {
-        // UPDATED: Return false instead of an error for an unknown email
-        return cb(null, false, { message: "User not found" });
-      }
-    } catch (err) {
-      console.log(err);
-      return cb(err);
-    }
-  }),
-);
 passport.use(
   "google",
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      // This stays as port 3000! Google still needs to talk directly to your Express backend first.
       callbackURL: "http://localhost:3000/auth/google/home",
       userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo",
     },
@@ -229,7 +202,6 @@ passport.use(
         ]);
 
         if (result.rows.length === 0) {
-          // UPDATED: Added "RETURNING *" to ensure the user object is passed back to Passport
           const newUser = await db.query(
             "INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *",
             [profile.email, "google"],
@@ -245,32 +217,27 @@ passport.use(
     },
   ),
 );
+
 app.post("/forgot-password", async (req, res) => {
-  const email = req.body.username; // Matches the React frontend input name
+  const email = req.body.username; 
 
   try {
-    // Check if user exists
-    const userResult = await db.query("SELECT * FROM users WHERE email = $1", [email]);
     
-    // Security best practice: Even if the email isn't in the DB, return a success 
-    // message so malicious actors can't use this form to guess registered emails.
+    const userResult = await db.query("SELECT * FROM users WHERE email = $1", [email]);
     if (userResult.rows.length === 0) {
       return res.status(200).json({ message: "If that email exists, a reset link was sent." });
     }
 
-    // Generate a secure random token
     const token = crypto.randomBytes(20).toString("hex");
-    const expireTime = Date.now() + 3600000; // 1 hour from now in milliseconds
+    const expireTime = Date.now() + 3600000; 
 
-    // Save token and expiry to the PostgreSQL database
     await db.query(
       "UPDATE users SET reset_password_token = $1, reset_password_expires = $2 WHERE email = $3",
       [token, expireTime, email]
     );
 
-    // Configure NodeMailer (Store EMAIL_USER and EMAIL_PASS in your .env file)
     const transporter = nodemailer.createTransport({
-      service: "Gmail", // Or your preferred email provider
+      service: "Gmail", 
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS, 
