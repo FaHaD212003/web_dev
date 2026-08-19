@@ -1,38 +1,51 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import CircularGallery from "../components/CircularGallery";
+import { useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { loginSuccess, logoutSuccess } from "../store/authSlice";
 
 export default function Home() {
-  const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
- 
   axios.defaults.withCredentials = true;
+
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        
         const response = await axios.get("http://localhost:3000/home");
-
         if (response.status === 200 && response.data.authenticated) {
-          setUser(response.data.user);
+          dispatch(loginSuccess(response.data.user));
         }
       } catch (err) {
-        console.error("Authentication failed:", err);
-        window.location.href = "/login";
+        dispatch(logoutSuccess());
       } finally {
         setIsLoading(false);
       }
     };
 
-    checkAuth();
-  }, []);
+    if (!isAuthenticated) {
+      checkAuth();
+    } else {
+      setIsLoading(false);
+    }
+  }, [isAuthenticated, dispatch]);
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate("/login");
+    }
+  }, [isLoading, isAuthenticated, navigate]);
 
   const handleLogout = async () => {
     try {
       await axios.post("http://localhost:3000/logout");
-      window.location.href = "/login";
+      dispatch(logoutSuccess());
+      navigate("/login");
     } catch (err) {
       console.error("Error logging out", err);
     }
@@ -48,11 +61,10 @@ export default function Home() {
     );
   }
 
-  if (!user) return null;
+  if (!isAuthenticated || !user) return null;
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white font-sans flex flex-col">
-    
       <header className="flex items-center justify-between px-8 py-5 border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-black tracking-tighter">Regulate.</h1>
@@ -75,7 +87,6 @@ export default function Home() {
       </header>
 
       <main className="flex-1 flex flex-col w-full relative">
-    
         <div className="w-full max-w-7xl mx-auto px-8 py-12 pb-0 z-10">
           <h2 className="text-4xl font-bold text-white mb-2">Welcome back.</h2>
           <p className="text-zinc-400 text-lg">
@@ -84,7 +95,6 @@ export default function Home() {
         </div>
 
         <div className="flex-1 relative w-full flex items-center justify-center mt-[-40px]">
-          
           <div style={{ height: "600px", width: "100%", position: "relative" }}>
             <CircularGallery
               bend={1.5}

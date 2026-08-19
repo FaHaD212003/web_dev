@@ -4,7 +4,7 @@ import axios from "axios";
 import HalftoneReveal from "../components/HalftoneReveal";
 
 export default function ResetPassword() {
-  const { token } = useParams(); // Grabs the token from the URL route /reset-password/:token
+  const { token } = useParams(); 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");

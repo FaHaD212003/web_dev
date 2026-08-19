@@ -15,6 +15,7 @@ const app = express();
 const port = 3000;
 const saltRounds = 10;
 env.config();
+
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -106,14 +107,14 @@ app.post("/login", async (req, res) => {
     ]);
 
     if (result.rows.length === 0) {
-      return res.status(401).json({ message: "Invalid email or password." });
+      return res.status(401).json({ message: "Invalid email ." });
     }
 
     const user = result.rows[0];
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid email or password." });
+      return res.status(401).json({ message: "Invalid password." });
     }
 
     req.logIn(user, (err) => {
