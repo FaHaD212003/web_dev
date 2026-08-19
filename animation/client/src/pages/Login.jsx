@@ -9,18 +9,33 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isChecking, setIsChecking] = useState(true);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   axios.defaults.withCredentials = true;
 
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+useEffect(() => {
+    const verifySession = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/home");
+        if (response.status === 200 && response.data.authenticated) {
+          dispatch(loginSuccess(response.data.user));
+        }
+      } catch (err) {
+        
+      } finally {
+        setIsChecking(false);
+      }
+    };
 
-  useEffect(() => {
     if (isAuthenticated) {
       navigate("/home");
+    } else {
+      verifySession();
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, dispatch]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
