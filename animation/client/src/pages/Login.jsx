@@ -4,6 +4,7 @@ import HalftoneReveal from "../components/HalftoneReveal";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { loginSuccess } from "../store/authSlice";
+import SplashCursor from "../components/SplashCursor";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -63,6 +64,18 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen bg-zinc-950 text-white font-sans">
+      <SplashCursor
+        DENSITY_DISSIPATION={3.5}
+        VELOCITY_DISSIPATION={2}
+        PRESSURE={0.1}
+        CURL={3}
+        SPLAT_RADIUS={0.2}
+        SPLAT_FORCE={6000}
+        COLOR_UPDATE_SPEED={10}
+        SHADING
+        RAINBOW_MODE={false}
+        COLOR="#A855F7"
+      />
       <div className="flex flex-col justify-center w-full lg:w-1/3 p-12 bg-zinc-900 border-r border-zinc-800 z-10 shadow-2xl">
         <div className="max-w-sm w-full mx-auto">
           <h1 className="text-4xl font-black tracking-tighter mb-2 text-white">

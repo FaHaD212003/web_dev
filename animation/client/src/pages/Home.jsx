@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { loginSuccess, logoutSuccess } from "../store/authSlice";
 import TargetCursor from "../components/TargetCursor";
+import SplashCursor from "../components/SplashCursor";
+import Topography from "../components/Topography";
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
@@ -27,7 +29,9 @@ export default function Home() {
       } finally {
         setIsLoading(false);
       }
+      useruser;
     };
+    user;
 
     if (!isAuthenticated) {
       checkAuth();
@@ -65,17 +69,13 @@ export default function Home() {
   if (!isAuthenticated || !user) return null;
 
   return (
+
+
     <div className="min-h-screen bg-zinc-950 text-white font-sans flex flex-col">
-          <div>
-      <TargetCursor 
-        spinDuration={2}
-        hideDefaultCursor
-        parallaxOn
-  hoverDuration={0.1}
-  cursorColor="#ffffff"
-  cursorColorOnTarget="#B497CF"
-      />
-      
+
+
+Strength={0.4}
+  
       <header className="flex items-center justify-between px-8 py-5 border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-black tracking-tighter">Regulate.</h1>
@@ -96,8 +96,19 @@ export default function Home() {
           </button>
         </div>
       </header>
-    </div>
 
+      <SplashCursor
+        DENSITY_DISSIPATION={2.5}
+        VELOCITY_DISSIPATION={2}
+        PRESSURE={0.1}
+        CURL={3}
+        SPLAT_RADIUS={0.1}
+        SPLAT_FORCE={6000}
+        COLOR_UPDATE_SPEED={10}
+        SHADING
+        RAINBOW_MODE={true}
+        COLOR="#ff55f1"
+      />
 
       <main className="flex-1 flex flex-col w-full relative">
         <div className="w-full max-w-7xl mx-auto px-8 py-12 pb-0 z-10">
@@ -121,5 +132,6 @@ export default function Home() {
         </div>
       </main>
     </div>
+    
   );
 }

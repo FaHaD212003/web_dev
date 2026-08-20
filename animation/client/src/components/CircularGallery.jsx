@@ -1,6 +1,5 @@
 import { Camera, Mesh, Plane, Program, Renderer, Texture, Transform } from 'ogl';
 import { useEffect, useRef } from 'react';
-import ElectricBorder from './ElectricBorder'
 
 
 function debounce(func, wait) {
