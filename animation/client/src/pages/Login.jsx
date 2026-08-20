@@ -24,7 +24,6 @@ useEffect(() => {
           dispatch(loginSuccess(response.data.user));
         }
       } catch (err) {
-        
       } finally {
         setIsChecking(false);
       }
