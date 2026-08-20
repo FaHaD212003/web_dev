@@ -16,7 +16,7 @@ export default function Login() {
   axios.defaults.withCredentials = true;
 
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
-useEffect(() => {
+  useEffect(() => {
     const verifySession = async () => {
       try {
         const response = await axios.get("http://localhost:3000/home");
