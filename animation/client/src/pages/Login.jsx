@@ -9,7 +9,6 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isChecking, setIsChecking] = useState(true);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -24,8 +23,7 @@ export default function Login() {
           dispatch(loginSuccess(response.data.user));
         }
       } catch (err) {
-      } finally {
-        setIsChecking(false);
+        console.error("Error verifying session:", err);
       }
     };
 
