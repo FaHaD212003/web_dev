@@ -4,7 +4,7 @@ import axios from "axios";
 import HalftoneReveal from "../components/HalftoneReveal";
 
 export default function ResetPassword() {
-  const { token } = useParams(); 
+  const { token } = useParams();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -28,7 +28,7 @@ export default function ResetPassword() {
     setIsLoading(true);
 
     try {
-      // Submits the new password along with the unique token url parameter
+      
       const response = await axios.post(
         `http://localhost:3000/reset-password/${token}`,
         {
@@ -120,7 +120,7 @@ export default function ResetPassword() {
           mode="mono"
           dotDensity={90}
           angle={45}
-          revealRadius={0.5}
+          revealRadius={0.4}
           dotSize={1.2}
           shape="circle"
           contrast={1.2}
