@@ -2,7 +2,7 @@ import express from "express";
 import passport from "passport";
 import {
   checkHome,
-  logoutUser,
+  logoutUser,   
   loginUser,
   registerUser,
   forgotPassword,
