@@ -13,8 +13,6 @@ export default function ResetPassword() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  axios.defaults.withCredentials = true;
-
   const handleReset = async (e) => {
     e.preventDefault();
     setError("");

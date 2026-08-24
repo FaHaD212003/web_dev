@@ -14,18 +14,25 @@ export default function Login() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  axios.defaults.withCredentials = true;
-
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+
   useEffect(() => {
     const verifySession = async () => {
+      const token = localStorage.getItem("token");
+      
+      if (!token) return;
+
       try {
-        const response = await axios.get("http://localhost:3000/home");
+        const response = await axios.get("http://localhost:3000/home", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         if (response.status === 200 && response.data.authenticated) {
           dispatch(loginSuccess(response.data.user));
         }
       } catch (err) {
-        console.error("Error verifying session:", err);
+        localStorage.removeItem("token");
       }
     };
 
@@ -46,7 +53,7 @@ export default function Login() {
       });
 
       if (response.status === 200) {
-        console.log("Logged in user:", response.data.user);
+        localStorage.setItem("token", response.data.token);
         dispatch(loginSuccess(response.data.user));
         navigate("/home");
       }
@@ -97,7 +104,7 @@ export default function Login() {
               placeholder="Enter your password"
               required
             />
-            <SubmitButton  loadingText="Logging In...">
+            <SubmitButton loadingText="Logging In...">
               Log In
             </SubmitButton>
             <div className="mt-4 text-center">

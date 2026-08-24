@@ -1,15 +1,15 @@
 import bcrypt from "bcrypt";
-import crypto from "crypto";
+import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import db from "../config/db.js";
 
 const saltRounds = 10;
 
 export const checkHome = (req, res) => {
-  if (req.isAuthenticated()) {
+  if (req.user) {
     return res.status(200).json({
       authenticated: true,
-      user: { id: req.user.id, email: req.user.email },
+      user: req.user,
     });
   } else {
     return res.status(401).json({
@@ -19,17 +19,9 @@ export const checkHome = (req, res) => {
   }
 };
 
-export const logoutUser = (req, res, next) => {
-  req.logout(function (err) {
-    if (err) {
-      console.error("Logout error:", err);
-      return res.status(500).json({ message: "Error during logout" });
-    }
-
-    req.session.destroy(() => {
-      res.clearCookie("connect.sid");
-      return res.status(200).json({ message: "Logged out successfully" });
-    });
+export const logoutUser = (req, res) => {
+  return res.status(200).json({
+    message: "Logged out successfully. Please clear token on the client.",
   });
 };
 
@@ -37,13 +29,15 @@ export const loginUser = async (req, res) => {
   try {
     const email = req.body.username;
     const password = req.body.password;
+    console.log("Login attempt for email:", email);
+    console.log("Password received:", password);
 
     const result = await db.query("SELECT * FROM users WHERE email = $1", [
       email,
     ]);
 
     if (result.rows.length === 0) {
-      return res.status(401).json({ message: "Invalid email ." });
+      return res.status(401).json({ message: "Invalid email." });
     }
 
     const user = result.rows[0];
@@ -53,64 +47,56 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid password." });
     }
 
-    req.logIn(user, (err) => {
-      if (err) {
-        console.error("Session creation error:", err);
-        return res.status(500).json({ message: "Session creation failed." });
-      }
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" },
+    );
 
-      return res.status(200).json({
-        message: "Login successful",
-        user: { id: user.id, email: user.email },
-      });
+    return res.status(200).json({
+      message: "Login successful",
+      token: token,
+      user: { id: user.id, email: user.email, role: user.role },
     });
   } catch (err) {
     console.error("Login error:", err);
     return res.status(500).json({ message: "Internal server error." });
   }
 };
-
 export const registerUser = async (req, res) => {
   const email = req.body.username;
   const password = req.body.password;
+  
+  const role = req.body.role || "user";
 
   try {
-    const checkResult = await db.query("SELECT * FROM users WHERE email = $1", [
-      email,
-    ]);
+    const checkResult = await db.query("SELECT * FROM users WHERE email = $1", [email]);
 
     if (checkResult.rows.length > 0) {
-      return res
-        .status(409)
-        .json({ message: "User already exists. Please log in." });
-    } else {
-      bcrypt.hash(password, saltRounds, async (err, hash) => {
-        if (err) {
-          console.error("Error hashing password:", err);
-          return res.status(500).json({ message: "Error securing password." });
-        } else {
-          const result = await db.query(
-            "INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *",
-            [email, hash],
-          );
-          const user = result.rows[0];
-
-          req.login(user, (err) => {
-            if (err) {
-              console.error("Error creating session:", err);
-              return res.status(500).json({
-                message:
-                  "Registration successful, but session creation failed.",
-              });
-            }
-            return res.status(201).json({
-              message: "Registration successful",
-              user: { id: user.id, email: user.email },
-            });
-          });
-        }
-      });
+      return res.status(409).json({ message: "User already exists. Please log in." });
     }
+
+    const hash = await bcrypt.hash(password, saltRounds);
+    
+    const result = await db.query(
+      "INSERT INTO users (email, password, role) VALUES ($1, $2, $3) RETURNING *",
+      [email, hash, role]
+    );
+    
+    const user = result.rows[0];
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" }
+    );
+
+    return res.status(201).json({
+      message: "Registration successful",
+      token: token,
+      user: { id: user.id, email: user.email, role: user.role },
+    });
+    
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Internal server error." });
@@ -130,12 +116,17 @@ export const forgotPassword = async (req, res) => {
         .json({ message: "If that email exists, a reset link was sent." });
     }
 
-    const token = crypto.randomBytes(20).toString("hex");
-    const expireTime = Date.now() + 3600000;
+    const user = userResult.rows[0];
+
+    const token = jwt.sign(
+      { id: user.id, purpose: "password_reset" },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" },
+    );
 
     await db.query(
-      "UPDATE users SET reset_password_token = $1, reset_password_expires = $2 WHERE email = $3",
-      [token, expireTime, email],
+      "UPDATE users SET reset_password_token = $1 WHERE email = $2",
+      [token, email],
     );
 
     const transporter = nodemailer.createTransport({
@@ -171,40 +162,34 @@ export const forgotPassword = async (req, res) => {
 export const resetPassword = async (req, res) => {
   const token = req.params.token;
   const newPassword = req.body.password;
-  const currentTime = Date.now();
 
   try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
     const result = await db.query(
-      "SELECT * FROM users WHERE reset_password_token = $1 AND reset_password_expires > $2",
-      [token, currentTime],
+      "SELECT * FROM users WHERE id = $1 AND reset_password_token = $2",
+      [decoded.id, token],
     );
 
     if (result.rows.length === 0) {
       return res
         .status(400)
-        .json({ message: "Password reset token is invalid or has expired." });
+        .json({ message: "Token has already been used or is invalid." });
     }
 
     const user = result.rows[0];
-    bcrypt.hash(newPassword, saltRounds, async (err, hash) => {
-      if (err) {
-        console.error("Error hashing new password:", err);
-        return res
-          .status(500)
-          .json({ message: "Error securing new password." });
-      }
+    const hash = await bcrypt.hash(newPassword, saltRounds);
 
-      await db.query(
-        "UPDATE users SET password = $1, reset_password_token = NULL, reset_password_expires = NULL WHERE email = $2",
-        [hash, user.email],
-      );
+    await db.query(
+      "UPDATE users SET password = $1, reset_password_token = NULL WHERE email = $2",
+      [hash, user.email],
+    );
 
-      return res
-        .status(200)
-        .json({ message: "Password updated successfully." });
-    });
+    return res.status(200).json({ message: "Password updated successfully." });
   } catch (err) {
     console.error("Reset password error:", err);
-    return res.status(500).json({ message: "Internal server error." });
+    return res
+      .status(400)
+      .json({ message: "Password reset token is invalid or has expired." });
   }
 };

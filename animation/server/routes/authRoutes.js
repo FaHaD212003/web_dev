@@ -2,16 +2,17 @@ import express from "express";
 import passport from "passport";
 import {
   checkHome,
-  logoutUser,   
+  logoutUser,
   loginUser,
   registerUser,
   forgotPassword,
   resetPassword,
 } from "../controllers/authController.js";
+import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.get("/home", checkHome);
+router.get("/home", verifyToken, checkHome);
 router.post("/login", loginUser);
 router.post("/register", registerUser);
 router.post("/logout", logoutUser);

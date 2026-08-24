@@ -10,8 +10,6 @@ export default function ForgotPassword() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  axios.defaults.withCredentials = true;
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -19,11 +17,10 @@ export default function ForgotPassword() {
     setIsLoading(true);
 
     try {
-      // Connects to your Express forgot-password post route
       const response = await axios.post(
         "http://localhost:3000/forgot-password",
         {
-          username: email, // Matches backend expectation
+          username: email,
         },
       );
 

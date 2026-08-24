@@ -11,13 +11,12 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState("user"); 
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
-  axios.defaults.withCredentials = true;
 
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
 
@@ -45,10 +44,11 @@ export default function Register() {
       const response = await axios.post("http://localhost:3000/register", {
         username: email,
         password: password,
+        role: role, 
       });
 
       if (response.status === 201) {
-        console.log("Registered user:", response.data.user);
+        localStorage.setItem("token", response.data.token);
         dispatch(loginSuccess(response.data.user));
         navigate("/home");
       }
@@ -110,10 +110,25 @@ export default function Register() {
               required
             />
 
+            <div className="flex items-center gap-2 pt-2 pb-2">
+              <input
+                type="checkbox"
+                id="managerCheck"
+                checked={role === "admin"}
+                onChange={(e) => setRole(e.target.checked ? "admin" : "user")}
+                className="w-4 h-4 rounded border-zinc-800 bg-zinc-950 text-white focus:ring-0 cursor-pointer"
+              />
+              <label htmlFor="managerCheck" className="text-sm font-medium text-zinc-400 cursor-pointer select-none">
+                Sign up as a Manager (Admin)
+              </label>
+            </div>
+
             <SubmitButton
               isLoading={isLoading}
               loadingText="Creating Account..."
-            >Sign Up</SubmitButton>
+            >
+              Sign Up
+            </SubmitButton>
           </form>
 
           <p className="mt-6 text-sm text-center text-zinc-500">
