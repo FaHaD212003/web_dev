@@ -1,6 +1,8 @@
 import { useState } from "react";
 import axios from "axios";
 import HalftoneReveal from "../components/HalftoneReveal";
+import Input from "../components/Input";
+import SubmitButton from "../components/SubmitButton";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -61,27 +63,20 @@ export default function ForgotPassword() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-sm font-semibold text-zinc-300 mb-1">
-                Email Address
-              </label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-600 transition-all text-white placeholder-zinc-600"
-                placeholder="hello@example.com"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-white text-black font-bold py-3 rounded-lg hover:bg-zinc-200 transition-colors shadow-lg disabled:opacity-50"
+            <Input
+              label={"email"}
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
+              required
+            />
+            <SubmitButton
+              isLoading={isLoading}
+              loadingText="Sending Reset Link..."
             >
-              {isLoading ? "Sending Link..." : "Send Reset Link"}
-            </button>
+              Send Reset Link
+            </SubmitButton>
           </form>
 
           <p className="mt-6 text-sm text-center text-zinc-500">

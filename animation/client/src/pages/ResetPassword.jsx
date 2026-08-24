@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import HalftoneReveal from "../components/HalftoneReveal";
+import Input from "../components/Input";
+import SubmitButton from "../components/SubmitButton";
 
 export default function ResetPassword() {
   const { token } = useParams();
@@ -28,7 +30,6 @@ export default function ResetPassword() {
     setIsLoading(true);
 
     try {
-      
       const response = await axios.post(
         `http://localhost:3000/reset-password/${token}`,
         {
@@ -73,41 +74,28 @@ export default function ResetPassword() {
           )}
 
           <form onSubmit={handleReset} className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-zinc-300 mb-1">
-                New Password
-              </label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-600 transition-all text-white placeholder-zinc-600"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-zinc-300 mb-1">
-                Confirm New Password
-              </label>
-              <input
-                type="password"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-600 transition-all text-white placeholder-zinc-600"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-white text-black font-bold py-3 rounded-lg hover:bg-zinc-200 transition-colors shadow-lg mt-2 disabled:opacity-50"
+            <Input
+              label={"New Password"}
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your new password"
+              required
+            />
+            <Input
+              label={"Confirm New Password"}
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm your new password"
+              required
+            />
+            <SubmitButton
+              isLoading={isLoading}
+              loadingText="Resetting Password..."
             >
-              {isLoading ? "Updating..." : "Update Password"}
-            </button>
+              Reset Password
+            </SubmitButton>
           </form>
         </div>
       </div>

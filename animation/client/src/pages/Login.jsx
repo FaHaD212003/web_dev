@@ -4,6 +4,8 @@ import HalftoneReveal from "../components/HalftoneReveal";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { loginSuccess } from "../store/authSlice";
+import Input from "../components/Input";
+import SubmitButton from "../components/SubmitButton";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -79,48 +81,25 @@ export default function Login() {
           )}
 
           <form onSubmit={handleLogin} className="space-y-5">
-            <div>
-              <label className="block text-sm font-semibold text-zinc-300 mb-1">
-                Email Address
-              </label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-600 transition-all text-white placeholder-zinc-600"
-                placeholder="hello@example.com"
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <label className="block text-sm font-semibold text-zinc-300">
-                  Password
-                </label>
-                <a
-                  href="/forgot-password"
-                  className="text-xs text-zinc-500 hover:text-white transition-colors"
-                >
-                  Forgot password?
-                </a>
-              </div>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-600 transition-all text-white placeholder-zinc-600"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-white text-black font-bold py-3 rounded-lg hover:bg-zinc-200 transition-colors shadow-lg"
-            >
+            <Input
+              label={"email"}
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
+              required
+            />
+            <Input
+              label={"password"}
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+            />
+            <SubmitButton  loadingText="Logging In...">
               Log In
-            </button>
+            </SubmitButton>
             <div className="mt-4 text-center">
               <a
                 href="/register"
