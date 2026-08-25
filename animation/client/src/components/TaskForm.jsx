@@ -1,10 +1,31 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
 
 export default function TaskForm({ isOpen, onClose, onSubmit, initialData }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("pending");
   const [assigneeId, setAssigneeId] = useState("");
+  const [roster, setRoster] = useState([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      const fetchRoster = async () => {
+        try {
+          const token = localStorage.getItem("token");
+          const response = await axios.get("http://localhost:3000/users/employees", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          setRoster(response.data);
+        } catch (err) {
+          setRoster([]);
+        }
+      };
+      fetchRoster();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (initialData) {
@@ -67,15 +88,21 @@ export default function TaskForm({ isOpen, onClose, onSubmit, initialData }) {
 
           <div>
             <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">
-              Assign To (User ID)
+              Assign To
             </label>
-            <input
-              type="number"
+            <select
               value={assigneeId}
               onChange={(e) => setAssigneeId(e.target.value)}
               required
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-zinc-500 transition-colors"
-            />
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-zinc-500 transition-colors appearance-none"
+            >
+              <option value="" disabled>Select an employee</option>
+              {roster.map((employee) => (
+                <option key={employee.id} value={employee.id}>
+                  {employee.email}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>

@@ -29,8 +29,7 @@ export const loginUser = async (req, res) => {
   try {
     const email = req.body.username;
     const password = req.body.password;
-    console.log("Login attempt for email:", email);
-    console.log("Password received:", password);
+    
 
     const result = await db.query("SELECT * FROM users WHERE email = $1", [
       email,

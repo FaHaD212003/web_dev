@@ -7,6 +7,8 @@ import "./config/db.js";
 import passport from "./config/passport.js";
 import authRoutes from "./routes/authRoutes.js";
 import { verifyToken } from "./middleware/authMiddleware.js";
+import taskRoutes from "./routes/taskRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 
 env.config();
 
@@ -26,6 +28,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
 app.use("/", authRoutes);
+app.use("/tasks", taskRoutes);
+app.use("/users", userRoutes);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
