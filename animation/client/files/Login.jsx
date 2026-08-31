@@ -7,77 +7,78 @@ import { loginSuccess } from "../store/authSlice";
 import Input from "../components/Input";
 import SubmitButton from "../components/SubmitButton";
 
-export default function Register() {
+export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState("user");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/home", { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
+    const verifySession = async () => {
+      const token = localStorage.getItem("token");
+      
+      if (!token) return;
 
-  const handleRegister = async (e) => {
+      try {
+        const response = await axios.get("http://localhost:3000/home", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (response.status === 200 && response.data.authenticated) {
+          dispatch(loginSuccess(response.data.user));
+        }
+      } catch (err) {
+        localStorage.removeItem("token");
+      }
+    };
+
+    if (isAuthenticated) {
+      navigate("/home");
+    } else {
+      verifySession();
+    }
+  }, [isAuthenticated, navigate, dispatch]);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
-
-    if (password !== confirmPassword) {
-      return setError("Passwords do not match. Please try again.");
-    }
-
-    if (password.length < 6) {
-      return setError("Password must be at least 6 characters long.");
-    }
-
-    setIsLoading(true);
-
     try {
-      const response = await axios.post("http://localhost:3000/register", {
+      const response = await axios.post("http://localhost:3000/login", {
         username: email,
         password: password,
-        role: role,
       });
 
-      if (response.status === 201) {
-        const user = response.data.user;
+      if (response.status === 200) {
         localStorage.setItem("token", response.data.token);
-        localStorage.setItem("user", JSON.stringify(user));
-        dispatch(loginSuccess(user));
-        navigate("/home", { replace: true });
+        dispatch(loginSuccess(response.data.user));
+        navigate("/home");
       }
     } catch (err) {
-      if (err.response && err.response.status === 409) {
-        setError("An account with this email already exists.");
+      if (err.response && err.response.status === 401) {
+        setError("Invalid email or password. Please try again.");
       } else {
         setError("Server error. Please try again later.");
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const handleGoogleRegister = () => {
+  const handleGoogleLogin = () => {
     window.location.href = "http://localhost:3000/auth/google";
   };
 
   return (
     <div className="flex min-h-screen bg-zinc-950 text-white font-sans">
-      <div className="flex flex-col justify-center w-full lg:w-1/3 p-12 bg-zinc-900 border-r border-zinc-800 z-10 shadow-2xl overflow-y-auto">
+      <div className="flex flex-col justify-center w-full lg:w-1/3 p-12 bg-zinc-900 border-r border-zinc-800 z-10 shadow-2xl">
         <div className="max-w-sm w-full mx-auto">
           <h1 className="text-4xl font-black tracking-tighter mb-2 text-white">
             Regulate.
           </h1>
           <p className="text-zinc-400 mb-8 font-medium tracking-wide">
-            Create your account.
+            Access your dashboard.
           </p>
 
           {error && (
@@ -86,7 +87,7 @@ export default function Register() {
             </div>
           )}
 
-          <form onSubmit={handleRegister} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-5">
             <Input
               label={"email"}
               type="email"
@@ -103,48 +104,18 @@ export default function Register() {
               placeholder="Enter your password"
               required
             />
-            <Input
-              label={"confirm password"}
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm your password"
-              required
-            />
-
-            <div className="flex items-center gap-2 pt-2 pb-2">
-              <input
-                type="checkbox"
-                id="managerCheck"
-                checked={role === "admin"}
-                onChange={(e) => setRole(e.target.checked ? "admin" : "user")}
-                className="w-4 h-4 rounded border-zinc-800 bg-zinc-950 text-white focus:ring-0 cursor-pointer"
-              />
-              <label
-                htmlFor="managerCheck"
-                className="text-sm font-medium text-zinc-400 cursor-pointer select-none"
-              >
-                Sign up as a Manager (Admin)
-              </label>
-            </div>
-
-            <SubmitButton
-              isLoading={isLoading}
-              loadingText="Creating Account..."
-            >
-              Sign Up
+            <SubmitButton loadingText="Logging In...">
+              Log In
             </SubmitButton>
+            <div className="mt-4 text-center">
+              <a
+                href="/register"
+                className="text-xs text-zinc-500 hover:text-white transition-colors"
+              >
+                Don't have an account? Create one here.
+              </a>
+            </div>
           </form>
-
-          <p className="mt-6 text-sm text-center text-zinc-500">
-            Already have an account?{" "}
-            <a
-              href="/login"
-              className="text-white hover:underline font-semibold"
-            >
-              Log in
-            </a>
-          </p>
 
           <div className="mt-8">
             <div className="relative">
@@ -159,7 +130,7 @@ export default function Register() {
             </div>
 
             <button
-              onClick={handleGoogleRegister}
+              onClick={handleGoogleLogin}
               className="mt-6 w-full flex items-center justify-center gap-3 bg-zinc-950 border border-zinc-800 text-white font-semibold py-3 rounded-lg hover:bg-zinc-800 transition-colors"
             >
               <img
@@ -173,9 +144,9 @@ export default function Register() {
         </div>
       </div>
 
-      <div className="hidden lg:block lg:w-2/3 relative overflow-hidden bg-black">
+      <div className="group hidden lg:block lg:w-2/3 relative overflow-hidden bg-black">
         <HalftoneReveal
-          src="https://picsum.photos/seed/register-reveal/1200/800"
+          src="https://picsum.photos/seed/halftone-reveal/1200/800"
           inkColor="#141414"
           paperColor="#000000"
           mode="mono"
@@ -192,12 +163,12 @@ export default function Register() {
           trigger="hover"
         />
 
-        <div className="absolute bottom-12 left-12 pointer-events-none">
+        <div className="absolute bottom-12 left-12 pointer-events-none opacity-0 translate-y-4 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:translate-y-0">
           <h2 className="text-5xl font-bold text-white mb-2">
-            Join the network.
+            Build the future.
           </h2>
           <p className="text-zinc-400 text-xl">
-            Establish your credentials today.
+            Secure access to your environment.
           </p>
         </div>
       </div>

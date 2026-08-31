@@ -17,10 +17,8 @@ export default function Home() {
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem("token");
-      const storedUser = localStorage.getItem("user");
 
       if (!token) {
-        localStorage.removeItem("user");
         dispatch(logoutSuccess());
         setIsLoading(false);
         return;
@@ -34,20 +32,10 @@ export default function Home() {
         });
 
         if (response.status === 200 && response.data.authenticated) {
-          const nextUser =
-            response.data.user || (storedUser ? JSON.parse(storedUser) : null);
-          if (nextUser) {
-            localStorage.setItem("user", JSON.stringify(nextUser));
-            dispatch(loginSuccess(nextUser));
-          }
-        } else {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          dispatch(logoutSuccess());
+          dispatch(loginSuccess(response.data.user));
         }
       } catch (err) {
         localStorage.removeItem("token");
-        localStorage.removeItem("user");
         dispatch(logoutSuccess());
       } finally {
         setIsLoading(false);

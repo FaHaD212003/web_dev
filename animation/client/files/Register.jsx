@@ -11,7 +11,7 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState("user");
+  const [role, setRole] = useState("user"); 
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -22,7 +22,7 @@ export default function Register() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/home", { replace: true });
+      navigate("/home");
     }
   }, [isAuthenticated, navigate]);
 
@@ -44,15 +44,13 @@ export default function Register() {
       const response = await axios.post("http://localhost:3000/register", {
         username: email,
         password: password,
-        role: role,
+        role: role, 
       });
 
       if (response.status === 201) {
-        const user = response.data.user;
         localStorage.setItem("token", response.data.token);
-        localStorage.setItem("user", JSON.stringify(user));
-        dispatch(loginSuccess(user));
-        navigate("/home", { replace: true });
+        dispatch(loginSuccess(response.data.user));
+        navigate("/home");
       }
     } catch (err) {
       if (err.response && err.response.status === 409) {
@@ -120,10 +118,7 @@ export default function Register() {
                 onChange={(e) => setRole(e.target.checked ? "admin" : "user")}
                 className="w-4 h-4 rounded border-zinc-800 bg-zinc-950 text-white focus:ring-0 cursor-pointer"
               />
-              <label
-                htmlFor="managerCheck"
-                className="text-sm font-medium text-zinc-400 cursor-pointer select-none"
-              >
+              <label htmlFor="managerCheck" className="text-sm font-medium text-zinc-400 cursor-pointer select-none">
                 Sign up as a Manager (Admin)
               </label>
             </div>

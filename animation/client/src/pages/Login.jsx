@@ -16,33 +16,51 @@ export default function Login() {
 
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
 
-  useEffect(() => {
-    const verifySession = async () => {
+useEffect(() => {
+    let isMounted = true;
+
+    const restoreSession = async () => {
       const token = localStorage.getItem("token");
-      
-      if (!token) return;
+      const savedUser = localStorage.getItem("user");
+
+      if (!token || !savedUser) return;
 
       try {
         const response = await axios.get("http://localhost:3000/home", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
-        if (response.status === 200 && response.data.authenticated) {
-          dispatch(loginSuccess(response.data.user));
+
+        if (response.status === 200 && response.data.authenticated && isMounted) {
+          const user = response.data.user || JSON.parse(savedUser);
+          localStorage.setItem("user", JSON.stringify(user));
+          dispatch(loginSuccess(user));
+          // Route dynamically based on role
+          navigate(user.role === "admin" ? "/dashboard" : "/my-tasks", { replace: true });
         }
       } catch (err) {
         localStorage.removeItem("token");
+        localStorage.removeItem("user");
       }
     };
 
     if (isAuthenticated) {
-      navigate("/home");
-    } else {
-      verifySession();
+      // Look at localStorage to determine where to send the already-authenticated user
+      const savedUser = JSON.parse(localStorage.getItem("user"));
+      if (savedUser) {
+        navigate(savedUser.role === "admin" ? "/dashboard" : "/my-tasks", { replace: true });
+      }
+      return () => {
+        isMounted = false;
+      };
     }
-  }, [isAuthenticated, navigate, dispatch]);
 
+    restoreSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated, navigate, dispatch]);
+  
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -53,9 +71,13 @@ export default function Login() {
       });
 
       if (response.status === 200) {
+        const user = response.data.user;
         localStorage.setItem("token", response.data.token);
-        dispatch(loginSuccess(response.data.user));
-        navigate("/home");
+        localStorage.setItem("user", JSON.stringify(user));
+        dispatch(loginSuccess(user));
+        navigate(user.role === "admin" ? "/dashboard" : "/my-tasks", {
+          replace: true,
+        });
       }
     } catch (err) {
       if (err.response && err.response.status === 401) {
@@ -104,9 +126,7 @@ export default function Login() {
               placeholder="Enter your password"
               required
             />
-            <SubmitButton loadingText="Logging In...">
-              Log In
-            </SubmitButton>
+            <SubmitButton loadingText="Logging In...">Log In</SubmitButton>
             <div className="mt-4 text-center">
               <a
                 href="/register"
