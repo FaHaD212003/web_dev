@@ -51,10 +51,22 @@ export default function TaskForm({ isOpen, onClose, onSubmit, initialData }) {
     });
   };
 
+  
+  const handleOverlayClick = (e) => {
+    if (e.target.id === "modal-overlay") {
+      onClose();
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    
+    <div 
+      id="modal-overlay"
+      onClick={handleOverlayClick}
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+    >
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 w-full max-w-md shadow-2xl">
         <h2 className="text-2xl font-bold text-white mb-6">
           {initialData ? "Edit Task" : "Create New Task"}

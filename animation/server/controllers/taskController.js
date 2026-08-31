@@ -1,4 +1,5 @@
 import db from "../config/db.js";
+import { sendTaskNotification } from "../utils/sendEmail.js";
 
 export const getAllTasks = async (req, res) => {
   try {
@@ -21,7 +22,6 @@ export const getMyTasks = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch your tasks." });
   }
 };
-
 export const createTask = async (req, res) => {
   const { title, description, status, assignee_id } = req.body;
   const creator_id = req.user.id;
@@ -29,10 +29,22 @@ export const createTask = async (req, res) => {
   try {
     const result = await db.query(
       "INSERT INTO tasks (title, description, status, assignee_id, creator_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [title, description, status, assignee_id, creator_id],
+      [title, description, status, assignee_id, creator_id]
     );
-    res.status(201).json(result.rows[0]);
+
+    const newTask = result.rows[0];
+
+    // Fetch assignee's email
+    if (assignee_id) {
+      const userResult = await db.query("SELECT email FROM users WHERE id = $1", [assignee_id]);
+      if (userResult.rows.length > 0) {
+        sendTaskNotification(userResult.rows[0].email, title, "assigned");
+      }
+    }
+
+    res.status(201).json(newTask);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Failed to create task." });
   }
 };
@@ -44,10 +56,26 @@ export const updateTask = async (req, res) => {
   try {
     const result = await db.query(
       "UPDATE tasks SET title = $1, description = $2, status = $3, assignee_id = $4 WHERE id = $5 RETURNING *",
-      [title, description, status, assignee_id, id],
+      [title, description, status, assignee_id, id]
     );
-    res.status(200).json(result.rows[0]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Task not found." });
+    }
+
+    const updatedTask = result.rows[0];
+
+    // Fetch current assignee's email and notify
+    if (assignee_id) {
+      const userResult = await db.query("SELECT email FROM users WHERE id = $1", [assignee_id]);
+      if (userResult.rows.length > 0) {
+        sendTaskNotification(userResult.rows[0].email, title, "updated");
+      }
+    }
+
+    res.status(200).json(updatedTask);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Failed to update task." });
   }
 };

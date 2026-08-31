@@ -9,6 +9,8 @@ import authRoutes from "./routes/authRoutes.js";
 import { verifyToken } from "./middleware/authMiddleware.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import swaggerUi from "swagger-ui-express";
+import fs from "fs";
 
 env.config();
 
@@ -25,8 +27,12 @@ app.use(
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use(express.static("public"));
+const swaggerDocument = JSON.parse(
+  fs.readFileSync("./swagger-output.json", "utf8")
+);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
+app.use(express.static("public"));
 app.use("/", authRoutes);
 app.use("/tasks", taskRoutes);
 app.use("/users", userRoutes);
