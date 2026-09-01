@@ -7,6 +7,7 @@ export default function Sidebar({ role, onOpenCreateTask }) {
     role === "admin"
       ? [
           { label: "Dashboard", to: "/dashboard" },
+          { label: "Users", to: "/admin-users" },
           { label: "All Tasks", to: "/admin-tasks" },
         ]
       : [

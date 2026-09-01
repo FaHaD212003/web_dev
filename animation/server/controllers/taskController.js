@@ -3,7 +3,9 @@ import { sendTaskNotification } from "../utils/sendEmail.js";
 
 export const getAllTasks = async (req, res) => {
   try {
-    const result = await db.query("SELECT * FROM tasks ORDER BY id DESC");
+    const result = await db.query(
+      "SELECT * FROM tasks ORDER BY created_at DESC NULLS LAST, id DESC",
+    );
     res.status(200).json(result.rows);
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch tasks." });
@@ -14,7 +16,7 @@ export const getMyTasks = async (req, res) => {
   try {
     const userId = req.user.id;
     const result = await db.query(
-      "SELECT * FROM tasks WHERE assignee_id = $1 ORDER BY id DESC",
+      "SELECT * FROM tasks WHERE assignee_id = $1 ORDER BY created_at DESC NULLS LAST, id DESC",
       [userId],
     );
     res.status(200).json(result.rows);
@@ -41,7 +43,7 @@ export const createTask = async (req, res) => {
 
   try {
     const result = await db.query(
-      "INSERT INTO tasks (title, description, status, assignee_id, creator_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      "INSERT INTO tasks (title, description, status, assignee_id, creator_id, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, NOW(), NOW()) RETURNING *",
       [title, description, status, assignee_id, creator_id],
     );
 
@@ -71,7 +73,7 @@ export const updateTask = async (req, res) => {
 
   try {
     const result = await db.query(
-      "UPDATE tasks SET title = $1, description = $2, status = $3, assignee_id = $4 WHERE id = $5 RETURNING *",
+      "UPDATE tasks SET title = $1, description = $2, status = $3, assignee_id = $4, updated_at = NOW() WHERE id = $5 RETURNING *",
       [title, description, status, assignee_id, id],
     );
 

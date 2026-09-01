@@ -29,7 +29,6 @@ export const loginUser = async (req, res) => {
   try {
     const email = req.body.username;
     const password = req.body.password;
-    
 
     const result = await db.query("SELECT * FROM users WHERE email = $1", [
       email,
@@ -40,6 +39,13 @@ export const loginUser = async (req, res) => {
     }
 
     const user = result.rows[0];
+
+    if (user.is_revoked) {
+      return res
+        .status(403)
+        .json({ message: "Your account has been revoked." });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
@@ -55,7 +61,12 @@ export const loginUser = async (req, res) => {
     return res.status(200).json({
       message: "Login successful",
       token: token,
-      user: { id: user.id, email: user.email, role: user.role },
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        is_revoked: user.is_revoked,
+      },
     });
   } catch (err) {
     console.error("Login error:", err);
@@ -65,37 +76,45 @@ export const loginUser = async (req, res) => {
 export const registerUser = async (req, res) => {
   const email = req.body.username;
   const password = req.body.password;
-  
+
   const role = req.body.role || "user";
 
   try {
-    const checkResult = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+    const checkResult = await db.query("SELECT * FROM users WHERE email = $1", [
+      email,
+    ]);
 
     if (checkResult.rows.length > 0) {
-      return res.status(409).json({ message: "User already exists. Please log in." });
+      return res
+        .status(409)
+        .json({ message: "User already exists. Please log in." });
     }
 
     const hash = await bcrypt.hash(password, saltRounds);
-    
+
     const result = await db.query(
       "INSERT INTO users (email, password, role) VALUES ($1, $2, $3) RETURNING *",
-      [email, hash, role]
+      [email, hash, role],
     );
-    
+
     const user = result.rows[0];
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "24h" }
+      { expiresIn: "24h" },
     );
 
     return res.status(201).json({
       message: "Registration successful",
       token: token,
-      user: { id: user.id, email: user.email, role: user.role },
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        is_revoked: user.is_revoked,
+      },
     });
-    
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Internal server error." });

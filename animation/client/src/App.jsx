@@ -16,6 +16,9 @@ import ResetPassword from "./pages/ResetPassword";
 import Layout from "./components/Layout";
 import AdminView from "./components/AdminView";
 import UserView from "./components/UserView";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminUserDetail from "./pages/AdminUserDetail";
 
 function ProtectedRoute() {
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
@@ -57,14 +60,9 @@ export default function App() {
 
         {/* Protected Routes wrapped in Layout */}
         <Route element={<ProtectedRoute />}>
-          <Route
-            path="/dashboard"
-            element={
-              <div className="text-white text-2xl font-bold">
-                Admin Dashboard
-              </div>
-            }
-          />
+          <Route path="/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin-users" element={<AdminUsersPage />} />
+          <Route path="/admin-users/:id" element={<AdminUserDetail />} />
           <Route path="/admin-tasks" element={<AdminView />} />
           <Route path="/my-tasks" element={<UserView />} />
           <Route path="/assigned-tasks" element={<UserView />} />

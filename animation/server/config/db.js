@@ -11,8 +11,24 @@ const db = new pg.Client({
   port: process.env.PG_PORT,
 });
 
+const ensureTaskColumns = async () => {
+  await db.query(
+    "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()",
+  );
+  await db.query(
+    "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()",
+  );
+};
+
 db.connect()
-  .then(() => console.log("Connected to PostgreSQL"))
+  .then(async () => {
+    console.log("Connected to PostgreSQL");
+    try {
+      await ensureTaskColumns();
+    } catch (err) {
+      console.error("Failed to ensure task timestamp columns", err);
+    }
+  })
   .catch((err) => console.error("Database connection error", err));
 
 export default db;
