@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import TextPressure from "./TextPressure";
 
 export default function Sidebar({ role, onOpenCreateTask }) {
   const location = useLocation();
@@ -18,16 +19,28 @@ export default function Sidebar({ role, onOpenCreateTask }) {
   return (
     <aside className="w-64 h-screen bg-zinc-950/95 border-r border-zinc-800 text-white p-5 flex flex-col fixed left-0 top-0 shadow-2xl backdrop-blur-sm">
       <div className="mb-8 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 via-cyan-400 to-violet-500 flex items-center justify-center text-sm font-black shadow-lg shadow-cyan-500/20">
-          T
-        </div>
-        <h1 className="text-2xl font-black tracking-tighter text-white">
-              Regulate.
-            </h1>
-            <span className="px-2 py-0.5 rounded-full bg-zinc-800 text-[10px] font-medium text-zinc-400 border border-zinc-700 mt-1 uppercase tracking-[0.18em]">
-              v1.0
-            </span>
-      </div>
+  
+ 
+  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 via-cyan-400 to-violet-500 flex items-center justify-center text-sm font-black shadow-lg shadow-cyan-500/20 shrink-0">
+    T
+  </div>
+  
+  <div style={{ position: "relative", height: "36px", width: "180px" }}>
+    <TextPressure
+      text={"Regulate."}
+      flex
+      alpha={false}
+      stroke={false}
+      width
+      weight
+      italic
+      textColor="#ffffff"
+      strokeColor="#5227FF"
+      minFontSize={24} 
+    />
+  </div>
+
+</div>
 
       <nav className="flex flex-col gap-3 flex-grow">
         {navItems.map((item) => {
@@ -51,7 +64,7 @@ export default function Sidebar({ role, onOpenCreateTask }) {
 
       <button
         onClick={onOpenCreateTask}
-        className="mt-auto bg-white hover:bg-zinc-200 text-black py-3 rounded-xl font-bold transition-colors shadow-lg shadow-white/10"
+        className="mt-auto mb-8 bg-white hover:bg-zinc-200 text-black py-3 rounded-xl font-bold transition-colors shadow-lg shadow-white/10"
       >
         + Create Task
       </button>

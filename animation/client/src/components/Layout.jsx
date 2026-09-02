@@ -3,6 +3,8 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logoutSuccess } from "../store/authSlice";
 import Sidebar from "./Sidebar";
+import FuzzyText from "./FuzzyText";
+import TextType from "./TextType";
 
 export default function Layout({ user }) {
   const [sidebarCreateTrigger, setSidebarCreateTrigger] = useState(false);
@@ -26,9 +28,22 @@ export default function Layout({ user }) {
       <div className="ml-64 flex-1 flex flex-col w-full relative bg-[radial-gradient(circle_at_top,_rgba(39,39,42,0.8),_transparent_35%),_#09090b]">
         <header className="flex items-center justify-between px-8 py-5 border-b border-zinc-800 bg-zinc-900/60 backdrop-blur-xl sticky top-0 z-50">
           <div className="flex items-center gap-3">
-            <h1 className="text-md font-black tracking-tighter text-grey">
-              Manage Your Tasks
-            </h1>
+            <TextType
+              text={[
+                "Manage your tasks efficiently",
+                "Stay organized and productive",
+                "Welcome to your task management dashboard",
+              ]}
+              typingSpeed={75}
+              pauseDuration={1500}
+              showCursor
+              cursorCharacter="_"
+              deletingSpeed={50}
+              variableSpeedEnabled={false}
+              variableSpeedMin={60}
+              variableSpeedMax={120}
+              cursorBlinkDuration={0.5}
+            />
           </div>
 
           <div className="flex items-center gap-5">

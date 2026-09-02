@@ -44,7 +44,7 @@ useEffect(() => {
     };
 
     if (isAuthenticated) {
-      // Look at localStorage to determine where to send the already-authenticated user
+      
       const savedUser = JSON.parse(localStorage.getItem("user"));
       if (savedUser) {
         navigate(savedUser.role === "admin" ? "/dashboard" : "/my-tasks", { replace: true });
