@@ -20,13 +20,27 @@ const ensureTaskColumns = async () => {
   );
 };
 
+const ensureCommentTable = async () => {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS comments (
+      id SERIAL PRIMARY KEY,
+      task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      content TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+};
+
 db.connect()
   .then(async () => {
     console.log("Connected to PostgreSQL");
     try {
       await ensureTaskColumns();
+      await ensureCommentTable();
     } catch (err) {
-      console.error("Failed to ensure task timestamp columns", err);
+      console.error("Failed to ensure database schema columns/tables", err);
     }
   })
   .catch((err) => console.error("Database connection error", err));

@@ -1,3 +1,5 @@
+import http from "http";
+import { Server as SocketIOServer } from "socket.io";
 import express from "express";
 import bodyParser from "body-parser";
 import session from "express-session";
@@ -9,6 +11,7 @@ import authRoutes from "./routes/authRoutes.js";
 import { verifyToken } from "./middleware/authMiddleware.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import commentRoutes from "./routes/commentRoutes.js";
 import swaggerUi from "swagger-ui-express";
 import fs from "fs";
 
@@ -16,6 +19,31 @@ env.config();
 
 const app = express();
 const port = 3000;
+
+const server = http.createServer(app);
+
+const io = new SocketIOServer(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    credentials: true,
+  },
+});
+
+app.set("io", io);
+
+io.on("connection", (socket) => {
+  socket.on("task:join", (taskId) => {
+    if (taskId) {
+      socket.join(`task_${taskId}`);
+    }
+  });
+
+  socket.on("task:leave", (taskId) => {
+    if (taskId) {
+      socket.leave(`task_${taskId}`);
+    }
+  });
+});
 
 app.use(
   cors({
@@ -28,15 +56,16 @@ app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 const swaggerDocument = JSON.parse(
-  fs.readFileSync("./swagger-output.json", "utf8")
+  fs.readFileSync("./swagger-output.json", "utf8"),
 );
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use(express.static("public"));
 app.use("/", authRoutes);
 app.use("/tasks", taskRoutes);
+app.use("/tasks", commentRoutes);
 app.use("/users", userRoutes);
 
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

@@ -2,38 +2,90 @@ import db from "../config/db.js";
 import { sendTaskNotification } from "../utils/sendEmail.js";
 
 export const getAllTasks = async (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.max(1, parseInt(req.query.limit) || 12);
+  const offset = (page - 1) * limit;
+
   try {
+    const countResult = await db.query("SELECT COUNT(*) FROM tasks");
+    const total = parseInt(countResult.rows[0]?.count || "0", 10);
+
     const result = await db.query(
-      "SELECT * FROM tasks ORDER BY created_at DESC NULLS LAST, id DESC",
+      "SELECT * FROM tasks ORDER BY created_at DESC NULLS LAST, id DESC LIMIT $1 OFFSET $2",
+      [limit, offset],
     );
-    res.status(200).json(result.rows);
+
+    res.status(200).json({
+      tasks: result.rows,
+      page,
+      limit,
+      total,
+      hasMore: offset + result.rows.length < total,
+    });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Failed to fetch tasks." });
   }
 };
 
 export const getMyTasks = async (req, res) => {
+  const userId = req.user.id;
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.max(1, parseInt(req.query.limit) || 12);
+  const offset = (page - 1) * limit;
+
   try {
-    const userId = req.user.id;
-    const result = await db.query(
-      "SELECT * FROM tasks WHERE assignee_id = $1 ORDER BY created_at DESC NULLS LAST, id DESC",
+    const countResult = await db.query(
+      "SELECT COUNT(*) FROM tasks WHERE assignee_id = $1",
       [userId],
     );
-    res.status(200).json(result.rows);
+    const total = parseInt(countResult.rows[0]?.count || "0", 10);
+
+    const result = await db.query(
+      "SELECT * FROM tasks WHERE assignee_id = $1 ORDER BY created_at DESC NULLS LAST, id DESC LIMIT $2 OFFSET $3",
+      [userId, limit, offset],
+    );
+
+    res.status(200).json({
+      tasks: result.rows,
+      page,
+      limit,
+      total,
+      hasMore: offset + result.rows.length < total,
+    });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Failed to fetch your tasks." });
   }
 };
 
 export const getAssignedTasks = async (req, res) => {
+  const userId = req.user.id;
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.max(1, parseInt(req.query.limit) || 12);
+  const offset = (page - 1) * limit;
+
   try {
-    const userId = req.user.id;
-    const result = await db.query(
-      "SELECT * FROM tasks WHERE creator_id = $1 AND assignee_id IS NOT NULL AND assignee_id <> $1 ORDER BY id DESC",
+    const countResult = await db.query(
+      "SELECT COUNT(*) FROM tasks WHERE creator_id = $1 AND assignee_id IS NOT NULL AND assignee_id <> $1",
       [userId],
     );
-    res.status(200).json(result.rows);
+    const total = parseInt(countResult.rows[0]?.count || "0", 10);
+
+    const result = await db.query(
+      "SELECT * FROM tasks WHERE creator_id = $1 AND assignee_id IS NOT NULL AND assignee_id <> $1 ORDER BY created_at DESC NULLS LAST, id DESC LIMIT $2 OFFSET $3",
+      [userId, limit, offset],
+    );
+
+    res.status(200).json({
+      tasks: result.rows,
+      page,
+      limit,
+      total,
+      hasMore: offset + result.rows.length < total,
+    });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Failed to fetch assigned tasks." });
   }
 };
@@ -66,7 +118,30 @@ export const createTask = async (req, res) => {
     res.status(500).json({ message: "Failed to create task." });
   }
 };
+export const getTaskById = async (req, res) => {
+  const { id } = req.params;
 
+  try {
+    const result = await db.query(
+      `SELECT 
+         t.*,
+         u_assignee.email AS assignee_email,
+         u_creator.email AS creator_email
+       FROM tasks t
+       LEFT JOIN users u_assignee ON t.assignee_id = u_assignee.id
+       LEFT JOIN users u_creator ON t.creator_id = u_creator.id
+       WHERE t.id = $1`,
+      [id],
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Task not found." });
+    }
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch task." });
+  }
+};
 export const updateTask = async (req, res) => {
   const { id } = req.params;
   const { title, description, status, assignee_id } = req.body;

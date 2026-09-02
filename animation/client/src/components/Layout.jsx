@@ -26,12 +26,9 @@ export default function Layout({ user }) {
       <div className="ml-64 flex-1 flex flex-col w-full relative bg-[radial-gradient(circle_at_top,_rgba(39,39,42,0.8),_transparent_35%),_#09090b]">
         <header className="flex items-center justify-between px-8 py-5 border-b border-zinc-800 bg-zinc-900/60 backdrop-blur-xl sticky top-0 z-50">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-black tracking-tighter text-white">
-              Regulate.
+            <h1 className="text-md font-black tracking-tighter text-grey">
+              Manage Your Tasks
             </h1>
-            <span className="px-2 py-0.5 rounded-full bg-zinc-800 text-[10px] font-medium text-zinc-400 border border-zinc-700 mt-1 uppercase tracking-[0.18em]">
-              v1.0
-            </span>
           </div>
 
           <div className="flex items-center gap-5">

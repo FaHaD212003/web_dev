@@ -183,35 +183,37 @@ export default function AdminDashboard() {
           Loading dashboard analytics...
         </div>
       ) : (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.9fr)]">
-          <div className="flex flex-col gap-6">
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-              {summaryCards.map((card) => {
-                const Icon = card.icon;
-                return (
-                  <div
-                    key={card.label}
-                    className={`rounded-2xl border border-zinc-800 bg-gradient-to-br ${card.accent} p-5 shadow-xl shadow-black/10`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">
-                          {card.label}
-                        </p>
-                        <div className="mt-2 text-3xl font-black text-white">
-                          {card.value}
-                        </div>
-                      </div>
-                      <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-white">
-                        <Icon className="h-5 w-5" />
+        <div className="flex flex-col gap-8">
+          {/* Top 5 Summary KPI Cards spanning full width */}
+          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 w-full">
+            {summaryCards.map((card) => {
+              const Icon = card.icon;
+              return (
+                <div
+                  key={card.label}
+                  className={`rounded-2xl border border-zinc-800 bg-gradient-to-br ${card.accent} p-4 sm:p-5 shadow-xl shadow-black/10 overflow-hidden flex flex-col justify-between`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 truncate">
+                        {card.label}
+                      </p>
+                      <div className="mt-2 text-2xl sm:text-3xl font-black text-white truncate">
+                        {card.value}
                       </div>
                     </div>
+                    <div className="shrink-0 rounded-xl border border-white/10 bg-black/30 p-2.5 sm:p-3 text-white">
+                      <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                    </div>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
+          </div>
 
-            <div className="grid gap-6 xl:grid-cols-2">
+          {/* Charts & Side Tools */}
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.9fr)]">
+            <div className="grid gap-6 lg:grid-cols-2">
               <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 shadow-xl shadow-black/10">
                 <div className="mb-5 flex items-center justify-between gap-4">
                   <div>
@@ -301,32 +303,32 @@ export default function AdminDashboard() {
                 </div>
               </section>
             </div>
-          </div>
 
-          <div className="flex flex-col gap-6">
-            <UserSearchPanel
-              title="Search a user"
-              description="Search by email and open the user detail page."
-              compact
-            />
+            <div className="flex flex-col gap-6">
+              <UserSearchPanel
+                title="Search a user"
+                description="Search by email and open the user detail page."
+                compact
+              />
 
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 shadow-xl shadow-black/10">
-              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">
-                Shortcuts
-              </p>
-              <h3 className="mt-1 text-lg font-black text-white">
-                User management
-              </h3>
-              <p className="mt-2 text-sm text-zinc-400">
-                Use the Users tab to browse the admin directory, then open any
-                profile for a deeper task breakdown.
-              </p>
-              <Link
-                to="/admin-users"
-                className="mt-4 inline-flex items-center justify-center rounded-xl border border-white/10 bg-white px-4 py-3 text-sm font-bold text-black transition-colors hover:bg-zinc-200"
-              >
-                Open Users page
-              </Link>
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 shadow-xl shadow-black/10">
+                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">
+                  Shortcuts
+                </p>
+                <h3 className="mt-1 text-lg font-black text-white">
+                  User management
+                </h3>
+                <p className="mt-2 text-sm text-zinc-400">
+                  Use the Users tab to browse the admin directory, then open any
+                  profile for a deeper task breakdown.
+                </p>
+                <Link
+                  to="/admin-users"
+                  className="mt-4 inline-flex items-center justify-center rounded-xl border border-white/10 bg-white px-4 py-3 text-sm font-bold text-black transition-colors hover:bg-zinc-200"
+                >
+                  Open Users page
+                </Link>
+              </div>
             </div>
           </div>
         </div>

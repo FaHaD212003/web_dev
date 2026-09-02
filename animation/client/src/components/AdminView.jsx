@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useOutletContext } from "react-router-dom";
 import axios from "axios";
 import TaskCard from "./TaskCard";
@@ -7,12 +7,18 @@ import TaskForm from "./TaskForm";
 export default function AdminView() {
   const [tasks, setTasks] = useState([]);
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingInitial, setIsLoadingInitial] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalTasks, setTotalTasks] = useState(0);
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [draggedTaskId, setDraggedTaskId] = useState(null);
   const [activeDropStatus, setActiveDropStatus] = useState("");
 
+  const sentinelRef = useRef(null);
   const { sidebarCreateTrigger, setSidebarCreateTrigger } = useOutletContext();
 
   useEffect(() => {
@@ -23,23 +29,79 @@ export default function AdminView() {
     }
   }, [sidebarCreateTrigger, setSidebarCreateTrigger]);
 
-  const fetchAllTasks = async () => {
+  const fetchTasks = useCallback(async (pageNumber = 1, isReset = false) => {
     try {
+      if (isReset) {
+        setIsLoadingInitial(true);
+      } else {
+        setIsLoadingMore(true);
+      }
+
       const token = localStorage.getItem("token");
       const response = await axios.get("http://localhost:3000/tasks", {
+        params: { page: pageNumber, limit: 12 },
         headers: { Authorization: `Bearer ${token}` },
       });
-      setTasks(response.data);
+
+      const fetchedTasks = Array.isArray(response.data)
+        ? response.data
+        : response.data.tasks || [];
+      const serverHasMore = response.data.hasMore ?? false;
+      const serverTotal = response.data.total ?? fetchedTasks.length;
+
+      if (isReset) {
+        setTasks(fetchedTasks);
+      } else {
+        setTasks((prev) => {
+          const existingIds = new Set(prev.map((t) => t.id));
+          const newUnique = fetchedTasks.filter((t) => !existingIds.has(t.id));
+          return [...prev, ...newUnique];
+        });
+      }
+
+      setPage(pageNumber);
+      setHasMore(serverHasMore);
+      setTotalTasks(serverTotal);
+      setError("");
     } catch (err) {
       setError("Failed to load system tasks.");
     } finally {
-      setIsLoading(false);
+      if (isReset) {
+        setIsLoadingInitial(false);
+      } else {
+        setIsLoadingMore(false);
+      }
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchAllTasks();
-  }, []);
+    fetchTasks(1, true);
+  }, [fetchTasks]);
+
+  // Infinite Scroll IntersectionObserver
+  useEffect(() => {
+    if (!hasMore || isLoadingInitial || isLoadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchTasks(page + 1, false);
+        }
+      },
+      { threshold: 0.1, rootMargin: "200px" },
+    );
+
+    const currentSentinel = sentinelRef.current;
+    if (currentSentinel) {
+      observer.observe(currentSentinel);
+    }
+
+    return () => {
+      if (currentSentinel) {
+        observer.unobserve(currentSentinel);
+      }
+    };
+  }, [hasMore, isLoadingInitial, isLoadingMore, page, fetchTasks]);
 
   const handleDelete = async (taskId) => {
     try {
@@ -47,7 +109,8 @@ export default function AdminView() {
       await axios.delete(`http://localhost:3000/tasks/${taskId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setTasks(tasks.filter((task) => task.id !== taskId));
+      setTasks((prev) => prev.filter((task) => task.id !== taskId));
+      setTotalTasks((prev) => Math.max(0, prev - 1));
     } catch (err) {
       setError("Failed to delete task.");
     }
@@ -57,21 +120,24 @@ export default function AdminView() {
     try {
       const token = localStorage.getItem("token");
       if (editingTask) {
-        await axios.put(
+        const response = await axios.put(
           `http://localhost:3000/tasks/${editingTask.id}`,
           taskData,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
         );
+        setTasks((prev) =>
+          prev.map((t) => (t.id === editingTask.id ? response.data : t)),
+        );
       } else {
         await axios.post("http://localhost:3000/tasks", taskData, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        fetchTasks(1, true);
       }
       setIsFormOpen(false);
       setEditingTask(null);
-      fetchAllTasks();
     } catch (err) {
       setError("Failed to save task.");
     }
@@ -155,7 +221,7 @@ export default function AdminView() {
             {filteredTasks.length}
           </span>
         </div>
-        <div className="flex flex-col gap-4 overflow-y-auto">
+        <div className="flex flex-col gap-4">
           {filteredTasks.map((task) => (
             <TaskCard
               key={task.id}
@@ -171,12 +237,27 @@ export default function AdminView() {
     );
   };
 
-  if (isLoading)
-    return <div className="text-zinc-500">Loading master task list...</div>;
+  if (isLoadingInitial) {
+    return (
+      <div className="flex h-72 items-center justify-center text-zinc-500">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          <div className="h-5 w-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+          Loading master task list...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
-      <h2 className="text-2xl font-bold text-white">Global Task Overview</h2>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-white">Global Task Overview</h2>
+          <p className="text-xs text-zinc-400 mt-1">
+            Showing {tasks.length} of {totalTasks} system tasks
+          </p>
+        </div>
+      </div>
 
       {error && (
         <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded-md text-sm">
@@ -189,6 +270,21 @@ export default function AdminView() {
         {renderColumn("Pending", "pending", "border-amber-500")}
         {renderColumn("In Progress", "in_progress", "border-blue-500")}
         {renderColumn("Completed", "completed", "border-emerald-500")}
+      </div>
+
+      {/* Infinite Scroll Sentinel & Indicators */}
+      <div ref={sentinelRef} className="h-8 flex items-center justify-center mt-4">
+        {isLoadingMore && (
+          <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400 py-3">
+            <div className="h-4 w-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+            Loading more tasks...
+          </div>
+        )}
+        {!hasMore && tasks.length > 0 && (
+          <p className="text-xs text-zinc-500 font-medium py-2">
+            All {totalTasks} tasks loaded
+          </p>
+        )}
       </div>
 
       <TaskForm

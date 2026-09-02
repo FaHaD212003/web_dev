@@ -75,13 +75,11 @@ export default function AdminUsersPage() {
         </div>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+      <div className="w-full">
         <UserSearchPanel
           title="Search and open profiles"
           description="Type an email address or name fragment to filter users."
         />
-
-       
       </div>
     </div>
   );

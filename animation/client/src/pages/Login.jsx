@@ -7,7 +7,7 @@ import { loginSuccess } from "../store/authSlice";
 import Input from "../components/Input";
 import SubmitButton from "../components/SubmitButton";
 
-export default function Login() {
+export default function Login() { 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -82,7 +82,10 @@ useEffect(() => {
     } catch (err) {
       if (err.response && err.response.status === 401) {
         setError("Invalid email or password. Please try again.");
-      } else {
+      } else if (err.response && err.response.status === 403) {
+        setError("Your account has been revoked. Please contact support.");
+      }
+      else {
         setError("Server error. Please try again later.");
       }
     }
@@ -118,6 +121,7 @@ useEffect(() => {
               placeholder="Enter your email"
               required
             />
+            
             <Input
               label={"password"}
               type="password"
@@ -127,6 +131,14 @@ useEffect(() => {
               required
             />
             <SubmitButton loadingText="Logging In...">Log In</SubmitButton>
+            <div className=" text-right">
+              <a
+                href="/forgot-password"
+                className="text-xs text-sm text-zinc-500 hover:text-white transition-colors"
+              >
+                Forgot your password?
+              </a>
+            </div>
             <div className="mt-4 text-center">
               <a
                 href="/register"

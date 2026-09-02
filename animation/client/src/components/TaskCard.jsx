@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+
 const statusStyles = {
   pending: "bg-amber-950 text-amber-400 border border-amber-900",
   in_progress: "bg-blue-950 text-blue-400 border border-blue-900",
@@ -11,6 +13,12 @@ export default function TaskCard({
   onDragStart,
   onDragEnd,
 }) {
+  const navigate = useNavigate();
+
+  const handleCardClick = () => {
+    navigate(`/tasks/${task.id}`);
+  };
+
   return (
     <div
       draggable
@@ -20,40 +28,47 @@ export default function TaskCard({
         onDragStart?.(task);
       }}
       onDragEnd={onDragEnd}
-      className="bg-zinc-900 border border-zinc-800 p-6 rounded-xl shadow-lg flex flex-col gap-4 hover:border-zinc-700 transition-colors cursor-grab active:cursor-grabbing"
+      onClick={handleCardClick}
+      className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl shadow-lg flex flex-col gap-3 hover:border-zinc-700 hover:bg-zinc-900/90 transition-all cursor-pointer group"
     >
-      <div className="flex justify-between items-start gap-4">
-        <h3 className="text-lg font-bold text-white leading-tight">
+      <div className="flex justify-between items-start gap-3">
+        <h3 className="text-base font-bold text-white leading-snug group-hover:text-cyan-400 transition-colors">
           {task.title}
         </h3>
         <span
-          className={`px-3 py-1 text-[10px] font-black rounded-md uppercase tracking-wider ${
+          className={`px-2.5 py-0.5 text-[10px] font-black rounded-md uppercase tracking-wider shrink-0 ${
             statusStyles[task.status] ?? statusStyles.pending
           }`}
         >
-          {task.status}
+          {task.status?.replace("_", " ")}
         </span>
       </div>
 
-      <p className="text-sm text-zinc-400 flex-1 line-clamp-3">
-        {task.description}
+      <p className="text-xs text-zinc-400 flex-1 line-clamp-3 leading-relaxed">
+        {task.description || "No description provided."}
       </p>
 
-      <div className="flex justify-between items-center text-xs text-zinc-500 font-medium mt-2">
-        <span>Assignee ID: {task.assignee_id}</span>
-        <span>Creator ID: {task.creator_id}</span>
+      <div className="flex justify-between items-center text-[11px] text-zinc-500 font-medium mt-1">
+        <span>Assignee #{task.assignee_id || "None"}</span>
+        <span>Creator #{task.creator_id}</span>
       </div>
 
-      <div className="flex gap-3 mt-4 pt-4 border-t border-zinc-800/50">
+      <div className="flex gap-2 mt-2 pt-3 border-t border-zinc-800/60">
         <button
-          onClick={() => onEdit(task)}
-          className="flex-1 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-sm font-bold text-white transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(task);
+          }}
+          className="flex-1 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-xs font-bold text-white transition-colors"
         >
           Edit
         </button>
         <button
-          onClick={() => onDelete(task.id)}
-          className="flex-1 py-2 bg-red-950/50 hover:bg-red-900/60 border border-red-900/50 text-red-400 rounded-lg text-sm font-bold transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(task.id);
+          }}
+          className="flex-1 py-1.5 bg-red-950/40 hover:bg-red-900/60 border border-red-900/40 text-red-400 rounded-lg text-xs font-bold transition-colors"
         >
           Delete
         </button>

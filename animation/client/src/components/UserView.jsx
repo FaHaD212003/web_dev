@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useOutletContext } from "react-router-dom";
 import axios from "axios";
 import TaskCard from "./TaskCard";
@@ -7,12 +7,19 @@ import TaskForm from "./TaskForm";
 export default function UserView() {
   const [tasks, setTasks] = useState([]);
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingInitial, setIsLoadingInitial] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalTasks, setTotalTasks] = useState(0);
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [draggedTaskId, setDraggedTaskId] = useState(null);
   const [activeDropStatus, setActiveDropStatus] = useState("");
   const location = useLocation();
+
+  const sentinelRef = useRef(null);
 
   // Catch the create event sent from Layout.jsx's Sidebar
   const { sidebarCreateTrigger, setSidebarCreateTrigger } = useOutletContext();
@@ -43,39 +50,82 @@ export default function UserView() {
     }
   }, [sidebarCreateTrigger, setSidebarCreateTrigger]);
 
-  useEffect(() => {
-    let isActive = true;
-
-    const fetchTasks = async () => {
+  const fetchTasks = useCallback(
+    async (pageNumber = 1, isReset = false) => {
       try {
+        if (isReset) {
+          setIsLoadingInitial(true);
+        } else {
+          setIsLoadingMore(true);
+        }
+
         const token = localStorage.getItem("token");
         const response = await axios.get(taskListConfig.endpoint, {
+          params: { page: pageNumber, limit: 12 },
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (isActive) {
-          setTasks(response.data);
+        const fetchedTasks = Array.isArray(response.data)
+          ? response.data
+          : response.data.tasks || [];
+        const serverHasMore = response.data.hasMore ?? false;
+        const serverTotal = response.data.total ?? fetchedTasks.length;
+
+        if (isReset) {
+          setTasks(fetchedTasks);
+        } else {
+          setTasks((prev) => {
+            const existingIds = new Set(prev.map((t) => t.id));
+            const newUnique = fetchedTasks.filter((t) => !existingIds.has(t.id));
+            return [...prev, ...newUnique];
+          });
         }
+
+        setPage(pageNumber);
+        setHasMore(serverHasMore);
+        setTotalTasks(serverTotal);
+        setError("");
       } catch (err) {
-        if (isActive) {
-          setError(taskListConfig.errorMessage);
-        }
+        setError(taskListConfig.errorMessage);
       } finally {
-        if (isActive) {
-          setIsLoading(false);
+        if (isReset) {
+          setIsLoadingInitial(false);
+        } else {
+          setIsLoadingMore(false);
         }
       }
-    };
+    },
+    [taskListConfig.endpoint, taskListConfig.errorMessage],
+  );
 
-    setIsLoading(true);
-    setError("");
-    setTasks([]);
-    fetchTasks();
+  useEffect(() => {
+    fetchTasks(1, true);
+  }, [location.pathname, fetchTasks]);
+
+  // Infinite Scroll IntersectionObserver
+  useEffect(() => {
+    if (!hasMore || isLoadingInitial || isLoadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchTasks(page + 1, false);
+        }
+      },
+      { threshold: 0.1, rootMargin: "200px" },
+    );
+
+    const currentSentinel = sentinelRef.current;
+    if (currentSentinel) {
+      observer.observe(currentSentinel);
+    }
 
     return () => {
-      isActive = false;
+      if (currentSentinel) {
+        observer.unobserve(currentSentinel);
+      }
     };
-  }, [location.pathname]);
+  }, [hasMore, isLoadingInitial, isLoadingMore, page, fetchTasks]);
 
   const handleDelete = async (taskId) => {
     try {
@@ -86,6 +136,7 @@ export default function UserView() {
       setTasks((currentTasks) =>
         currentTasks.filter((task) => task.id !== taskId),
       );
+      setTotalTasks((prev) => Math.max(0, prev - 1));
     } catch (err) {
       setError("Failed to delete task. You might not have permission.");
     }
@@ -95,24 +146,24 @@ export default function UserView() {
     try {
       const token = localStorage.getItem("token");
       if (editingTask) {
-        await axios.put(
+        const response = await axios.put(
           `http://localhost:3000/tasks/${editingTask.id}`,
           taskData,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
         );
+        setTasks((prev) =>
+          prev.map((t) => (t.id === editingTask.id ? response.data : t)),
+        );
       } else {
         await axios.post("http://localhost:3000/tasks", taskData, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        fetchTasks(1, true);
       }
       setIsFormOpen(false);
       setEditingTask(null);
-      const response = await axios.get(taskListConfig.endpoint, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setTasks(response.data);
     } catch (err) {
       setError("Failed to save task.");
     }
@@ -197,7 +248,7 @@ export default function UserView() {
             {filteredTasks.length}
           </span>
         </div>
-        <div className="flex flex-col gap-4 overflow-y-auto">
+        <div className="flex flex-col gap-4">
           {filteredTasks.map((task) => (
             <TaskCard
               key={task.id}
@@ -215,11 +266,27 @@ export default function UserView() {
 
   const { title, emptyMessage, loadingMessage } = taskListConfig;
 
-  if (isLoading) return <div className="text-zinc-500">{loadingMessage}</div>;
+  if (isLoadingInitial) {
+    return (
+      <div className="flex h-72 items-center justify-center text-zinc-500">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          <div className="h-5 w-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+          {loadingMessage}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
-      <h2 className="text-2xl font-bold text-white mb-2">{title}</h2>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-1">{title}</h2>
+          <p className="text-xs text-zinc-400">
+            Showing {tasks.length} of {totalTasks} tasks
+          </p>
+        </div>
+      </div>
 
       {error && (
         <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded-md text-sm">
@@ -234,7 +301,22 @@ export default function UserView() {
         {renderColumn("Completed", "completed", "border-emerald-500")}
       </div>
 
-      {tasks.length === 0 && <p className="text-zinc-500">{emptyMessage}</p>}
+      {tasks.length === 0 && <p className="text-zinc-500 text-sm mt-4">{emptyMessage}</p>}
+
+      {/* Infinite Scroll Sentinel & Indicators */}
+      <div ref={sentinelRef} className="h-8 flex items-center justify-center mt-4">
+        {isLoadingMore && (
+          <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400 py-3">
+            <div className="h-4 w-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+            Loading more tasks...
+          </div>
+        )}
+        {!hasMore && tasks.length > 0 && (
+          <p className="text-xs text-zinc-500 font-medium py-2">
+            All {totalTasks} tasks loaded
+          </p>
+        )}
+      </div>
 
       <TaskForm
         isOpen={isFormOpen}

@@ -82,21 +82,39 @@ export const getDashboardStats = async (req, res) => {
 
 export const searchUsers = async (req, res) => {
   const query = (req.query.query || "").trim();
-  const limit = Math.min(Number(req.query.limit || 20), 50);
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(Math.max(1, parseInt(req.query.limit) || 15), 50);
+  const offset = (page - 1) * limit;
 
   try {
+    const countResult = await db.query(
+      `
+        SELECT COUNT(*)
+        FROM users
+        WHERE $1 = '' OR email ILIKE $1;
+      `,
+      [`%${query}%`],
+    );
+    const total = parseInt(countResult.rows[0]?.count || "0", 10);
+
     const result = await db.query(
       `
         SELECT id, email, role, is_revoked
         FROM users
         WHERE $1 = '' OR email ILIKE $1
         ORDER BY email ASC
-        LIMIT $2;
+        LIMIT $2 OFFSET $3;
       `,
-      [`%${query}%`, limit],
+      [`%${query}%`, limit, offset],
     );
 
-    res.status(200).json(result.rows);
+    res.status(200).json({
+      users: result.rows,
+      page,
+      limit,
+      total,
+      hasMore: offset + result.rows.length < total,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to search users." });
@@ -163,9 +181,29 @@ export const getUserDetail = async (req, res) => {
 export const updateUserAccess = async (req, res) => {
   const { id } = req.params;
   const { role, is_revoked } = req.body;
+  const targetUserId = parseInt(id, 10);
+  const currentUserId = req.user.id;
 
   if (!role && typeof is_revoked !== "boolean") {
     return res.status(400).json({ message: "No update fields provided." });
+  }
+
+  // Prevent admin from revoking their own account
+  if (currentUserId === targetUserId && is_revoked === true) {
+    return res
+      .status(400)
+      .json({ message: "You cannot revoke your own admin account access." });
+  }
+
+  // Prevent admin from demoting their own role
+  if (currentUserId === targetUserId && role === "user") {
+    return res
+      .status(400)
+      .json({ message: "You cannot remove your own admin privileges." });
+  }
+
+  if (role === "admin" && is_revoked === true) {
+    return res.status(400).json({ message: "Admin users cannot be revoked." });
   }
 
   try {

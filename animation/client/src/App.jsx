@@ -19,6 +19,7 @@ import UserView from "./components/UserView";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminUserDetail from "./pages/AdminUserDetail";
+import TaskDetailPage from "./pages/TaskDetailPage";
 
 function ProtectedRoute() {
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
@@ -64,6 +65,7 @@ export default function App() {
           <Route path="/admin-users" element={<AdminUsersPage />} />
           <Route path="/admin-users/:id" element={<AdminUserDetail />} />
           <Route path="/admin-tasks" element={<AdminView />} />
+          <Route path="/tasks/:id" element={<TaskDetailPage />} />
           <Route path="/my-tasks" element={<UserView />} />
           <Route path="/assigned-tasks" element={<UserView />} />
           <Route path="/home" element={<Home />} />

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
+import { useSelector } from "react-redux";
 import {
   ArrowLeft,
   UserRound,
@@ -64,6 +65,7 @@ function MetricCard({ label, value, color, icon: Icon }) {
 export default function AdminUserDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const currentUser = useSelector((state) => state.auth.user);
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -107,6 +109,11 @@ export default function AdminUserDetail() {
   const assignedStatus = data?.stats?.assignedStatus || {};
   const createdStatus = data?.stats?.createdStatus || {};
 
+  const isSelf =
+    currentUser &&
+    (Number(currentUser.id) === Number(id) ||
+      currentUser.email === data?.user?.email);
+
   const refreshUser = async () => {
     const token = localStorage.getItem("token");
     const response = await axios.get(
@@ -128,7 +135,9 @@ export default function AdminUserDetail() {
       });
       await refreshUser();
     } catch (err) {
-      setActionError("Failed to update this user.");
+      setActionError(
+        err.response?.data?.message || "Failed to update this user.",
+      );
     } finally {
       setIsUpdating(false);
     }
@@ -188,25 +197,35 @@ export default function AdminUserDetail() {
             <p className="mt-3 text-sm text-zinc-400">
               Switch this account between admin and user access.
             </p>
-            <div className="mt-4 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={makeAdmin}
-                disabled={isUpdating || data.user.role === "admin"}
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-black transition-colors hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <ShieldCheck className="h-4 w-4" />
-                Make Admin
-              </button>
-              <button
-                type="button"
-                onClick={makeUser}
-                disabled={isUpdating || data.user.role === "user"}
-                className="inline-flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <ShieldOff className="h-4 w-4" />
-                Make User
-              </button>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              {data.user.role === "user" && (
+                <button
+                  type="button"
+                  onClick={makeAdmin}
+                  disabled={isUpdating}
+                  className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-black transition-colors hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50 shadow-lg shadow-white/5"
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  Make Admin
+                </button>
+              )}
+              {data.user.role === "admin" &&
+                (isSelf ? (
+                  <span className="inline-flex items-center gap-2 rounded-xl border border-zinc-700/60 bg-zinc-950/60 px-4 py-3 text-xs font-semibold text-zinc-400">
+                    <ShieldCheck className="h-4 w-4 text-cyan-400" />
+                    Current Admin Account
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={makeUser}
+                    disabled={isUpdating}
+                    className="inline-flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <ShieldOff className="h-4 w-4" />
+                    Make User
+                  </button>
+                ))}
             </div>
           </div>
 
@@ -227,23 +246,33 @@ export default function AdminUserDetail() {
             <p className="mt-3 text-sm text-zinc-400">
               Revoked users cannot log in or continue using protected routes.
             </p>
-            <div className="mt-4 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={revokeUser}
-                disabled={isUpdating || data.user.is_revoked}
-                className="inline-flex items-center gap-2 rounded-xl bg-red-500/10 px-4 py-3 text-sm font-bold text-red-300 transition-colors hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Revoke Access
-              </button>
-              <button
-                type="button"
-                onClick={restoreUser}
-                disabled={isUpdating || !data.user.is_revoked}
-                className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-300 transition-colors hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Restore Access
-              </button>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              {isSelf ? (
+                <span className="inline-flex items-center gap-2 rounded-xl border border-zinc-700/60 bg-zinc-950/60 px-4 py-3 text-xs font-semibold text-zinc-400">
+                  <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                  You cannot revoke your own account
+                </span>
+              ) : data.user.is_revoked ? (
+                <button
+                  type="button"
+                  onClick={restoreUser}
+                  disabled={isUpdating}
+                  className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-300 transition-colors hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50 shadow-lg shadow-emerald-500/10"
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  Restore Access
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={revokeUser}
+                  disabled={isUpdating}
+                  className="inline-flex items-center gap-2 rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm font-bold text-red-300 transition-colors hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50 shadow-lg shadow-red-500/10"
+                >
+                  <ShieldAlert className="h-4 w-4" />
+                  Revoke Access
+                </button>
+              )}
             </div>
           </div>
         </div>

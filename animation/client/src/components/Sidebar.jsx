@@ -21,7 +21,12 @@ export default function Sidebar({ role, onOpenCreateTask }) {
         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 via-cyan-400 to-violet-500 flex items-center justify-center text-sm font-black shadow-lg shadow-cyan-500/20">
           T
         </div>
-        <h2 className="text-2xl font-black tracking-tighter">TaskApp</h2>
+        <h1 className="text-2xl font-black tracking-tighter text-white">
+              Regulate.
+            </h1>
+            <span className="px-2 py-0.5 rounded-full bg-zinc-800 text-[10px] font-medium text-zinc-400 border border-zinc-700 mt-1 uppercase tracking-[0.18em]">
+              v1.0
+            </span>
       </div>
 
       <nav className="flex flex-col gap-3 flex-grow">
