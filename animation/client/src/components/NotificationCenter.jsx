@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   Clock,
   Sparkles,
+  MessageSquare,
 } from "lucide-react";
 
 const formatRelativeTime = (dateString) => {
@@ -45,6 +46,16 @@ const getNotificationIcon = (type) => {
       return {
         icon: RefreshCw,
         badgeClass: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+      };
+    case "comment_created":
+      return {
+        icon: MessageSquare,
+        badgeClass: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+      };
+    case "comment_updated":
+      return {
+        icon: MessageSquare,
+        badgeClass: "bg-violet-500/10 text-violet-500 border-violet-500/20",
       };
     case "task_assigned":
     default:

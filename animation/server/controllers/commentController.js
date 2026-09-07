@@ -1,5 +1,9 @@
 import db from "../config/db.js";
 import minioClient, { BUCKET_NAME } from "../config/minio.js";
+import {
+  createAndDispatchNotifications,
+  getAdminUserIds,
+} from "../utils/notificationHelper.js";
 
 export const getCommentsByTaskId = async (req, res) => {
   const { taskId } = req.params;
@@ -46,13 +50,16 @@ export const createComment = async (req, res) => {
   }
 
   try {
-    // Check if task exists
-    const taskCheck = await db.query("SELECT id FROM tasks WHERE id = $1", [
-      taskId,
-    ]);
+    // Check if task exists and retrieve title/assignee/creator info
+    const taskCheck = await db.query(
+      "SELECT id, title, creator_id, assignee_id FROM tasks WHERE id = $1",
+      [taskId],
+    );
     if (taskCheck.rows.length === 0) {
       return res.status(404).json({ message: "Task not found." });
     }
+
+    const task = taskCheck.rows[0];
 
     let file_url = null;
     let file_name = null;
@@ -120,12 +127,38 @@ export const createComment = async (req, res) => {
     );
 
     const createdComment = fullCommentResult.rows[0];
+    const io = req.app.get("io");
 
     // Broadcast to task discussion room
-    req.app
-      .get("io")
-      ?.to(`task_${taskId}`)
-      .emit("comment:created", createdComment);
+    io?.to(`task_${taskId}`).emit("comment:created", createdComment);
+
+    // Real-Time Notifications to Admins, Creator, and Assignee (excluding the commenter)
+    const adminIds = await getAdminUserIds();
+    const recipientIds = [
+      ...adminIds,
+      task.creator_id,
+      task.assignee_id,
+    ].filter((id) => id && id !== userId);
+
+    const commenterEmail = req.user.email || "A user";
+    let commentSnippet = "";
+    if (content && content.trim()) {
+      const cleanContent = content.trim();
+      commentSnippet = `"${cleanContent.length > 60 ? cleanContent.substring(0, 60) + "..." : cleanContent}"`;
+    }
+    if (file_name) {
+      commentSnippet = commentSnippet
+        ? `${commentSnippet} (with attachment "${file_name}")`
+        : `attached file "${file_name}"`;
+    }
+
+    await createAndDispatchNotifications(io, {
+      recipientUserIds: recipientIds,
+      taskId: task.id,
+      title: `New Comment on Task #${task.id}`,
+      message: `${commenterEmail} commented on "${task.title}": ${commentSnippet}`,
+      type: "comment_created",
+    });
 
     res.status(201).json(createdComment);
   } catch (err) {
@@ -194,12 +227,44 @@ export const updateComment = async (req, res) => {
     );
 
     const finalUpdatedComment = fullCommentResult.rows[0];
+    const io = req.app.get("io");
 
-    // Broadcast update to room
-    req.app
-      .get("io")
-      ?.to(`task_${comment.task_id}`)
-      .emit("comment:updated", finalUpdatedComment);
+    // Broadcast update to discussion room
+    io?.to(`task_${comment.task_id}`).emit(
+      "comment:updated",
+      finalUpdatedComment,
+    );
+
+    // Real-Time Notifications for Admins, Creator, and Assignee (excluding the editor)
+    const taskResult = await db.query(
+      "SELECT id, title, creator_id, assignee_id FROM tasks WHERE id = $1",
+      [comment.task_id],
+    );
+    const task = taskResult.rows[0];
+
+    if (task) {
+      const adminIds = await getAdminUserIds();
+      const recipientIds = [
+        ...adminIds,
+        task.creator_id,
+        task.assignee_id,
+      ].filter((id) => id && id !== userId);
+
+      const commenterEmail = req.user.email || "A user";
+      const cleanContent = content.trim();
+      const updatedSnippet =
+        cleanContent.length > 60
+          ? cleanContent.substring(0, 60) + "..."
+          : cleanContent;
+
+      await createAndDispatchNotifications(io, {
+        recipientUserIds: recipientIds,
+        taskId: task.id,
+        title: `Comment Edited on Task #${task.id}`,
+        message: `${commenterEmail} edited their comment on "${task.title}": "${updatedSnippet}"`,
+        type: "comment_updated",
+      });
+    }
 
     res.status(200).json(finalUpdatedComment);
   } catch (err) {
