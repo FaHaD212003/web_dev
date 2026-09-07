@@ -520,6 +520,30 @@
         }
       }
     },
+    "/tasks/comments/attachment/{fileKey}": {
+      "get": {
+        "description": "",
+        "produces": [
+          "content-type"
+        ],
+        "parameters": [
+          {
+            "name": "fileKey",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
     "/tasks/{taskId}/comments": {
       "get": {
         "description": "",

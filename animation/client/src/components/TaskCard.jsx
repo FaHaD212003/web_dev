@@ -60,6 +60,7 @@ export default function TaskCard({
 
   const isOverdue =
     task.due_date &&
+    new Date(task.due_date) < new Date() &&
     new Date(task.due_date).getTime() <= now &&
     task.status !== "completed";
 

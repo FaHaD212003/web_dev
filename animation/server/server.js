@@ -14,6 +14,7 @@ import userRoutes from "./routes/userRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import { startDueTaskScheduler } from "./utils/dueTaskScheduler.js";
+import { ensureBucketExists } from "./config/minio.js";
 import swaggerUi from "swagger-ui-express";
 import fs from "fs";
 
@@ -96,5 +97,6 @@ app.use("/notifications", notificationRoutes);
 
 server.listen(port, () => {
   console.log(`Server running on port ${port}`);
+  ensureBucketExists();
   startDueTaskScheduler(io);
 });

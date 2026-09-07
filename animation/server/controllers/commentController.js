@@ -1,4 +1,5 @@
 import db from "../config/db.js";
+import minioClient, { BUCKET_NAME } from "../config/minio.js";
 
 export const getCommentsByTaskId = async (req, res) => {
   const { taskId } = req.params;
@@ -10,6 +11,11 @@ export const getCommentsByTaskId = async (req, res) => {
          c.task_id, 
          c.user_id, 
          c.content, 
+         c.file_url,
+         c.file_name,
+         c.file_size,
+         c.file_type,
+         c.file_key,
          c.created_at, 
          c.updated_at, 
          u.email AS user_email, 
@@ -31,9 +37,12 @@ export const createComment = async (req, res) => {
   const { taskId } = req.params;
   const { content } = req.body;
   const userId = req.user.id;
+  const file = req.file;
 
-  if (!content || !content.trim()) {
-    return res.status(400).json({ message: "Comment text cannot be empty." });
+  if ((!content || !content.trim()) && !file) {
+    return res
+      .status(400)
+      .json({ message: "Comment must have text or an attached file." });
   }
 
   try {
@@ -45,11 +54,46 @@ export const createComment = async (req, res) => {
       return res.status(404).json({ message: "Task not found." });
     }
 
+    let file_url = null;
+    let file_name = null;
+    let file_size = null;
+    let file_type = null;
+    let file_key = null;
+
+    if (file) {
+      const sanitizedName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
+      file_key = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${sanitizedName}`;
+      file_name = file.originalname;
+      file_size = file.size;
+      file_type = file.mimetype;
+
+      await minioClient.putObject(
+        BUCKET_NAME,
+        file_key,
+        file.buffer,
+        file.size,
+        {
+          "Content-Type": file.mimetype,
+        },
+      );
+
+      file_url = `http://localhost:3000/tasks/comments/attachment/${encodeURIComponent(file_key)}`;
+    }
+
     const insertResult = await db.query(
-      `INSERT INTO comments (task_id, user_id, content, created_at, updated_at)
-       VALUES ($1, $2, $3, NOW(), NOW())
+      `INSERT INTO comments (task_id, user_id, content, file_url, file_name, file_size, file_type, file_key, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
        RETURNING *`,
-      [taskId, userId, content.trim()],
+      [
+        taskId,
+        userId,
+        content ? content.trim() : "",
+        file_url,
+        file_name,
+        file_size,
+        file_type,
+        file_key,
+      ],
     );
 
     const newComment = insertResult.rows[0];
@@ -60,6 +104,11 @@ export const createComment = async (req, res) => {
          c.task_id, 
          c.user_id, 
          c.content, 
+         c.file_url,
+         c.file_name,
+         c.file_size,
+         c.file_type,
+         c.file_key,
          c.created_at, 
          c.updated_at, 
          u.email AS user_email, 
@@ -72,7 +121,7 @@ export const createComment = async (req, res) => {
 
     const createdComment = fullCommentResult.rows[0];
 
-    // Broadcast to room
+    // Broadcast to task discussion room
     req.app
       .get("io")
       ?.to(`task_${taskId}`)
@@ -106,7 +155,7 @@ export const updateComment = async (req, res) => {
 
     const comment = commentCheck.rows[0];
 
-    // Ownership check: only the comment author can update it
+    // Ownership check: only comment author can edit
     if (comment.user_id !== userId) {
       return res
         .status(403)
@@ -129,6 +178,11 @@ export const updateComment = async (req, res) => {
          c.task_id, 
          c.user_id, 
          c.content, 
+         c.file_url,
+         c.file_name,
+         c.file_size,
+         c.file_type,
+         c.file_key,
          c.created_at, 
          c.updated_at, 
          u.email AS user_email, 
@@ -141,7 +195,7 @@ export const updateComment = async (req, res) => {
 
     const finalUpdatedComment = fullCommentResult.rows[0];
 
-    // Broadcast to room
+    // Broadcast update to room
     req.app
       .get("io")
       ?.to(`task_${comment.task_id}`)
@@ -170,16 +224,26 @@ export const deleteComment = async (req, res) => {
 
     const comment = commentCheck.rows[0];
 
-    // Ownership check: only the comment author can delete it
-    if (comment.user_id !== userId) {
+    // Ownership check: comment author or admin can delete
+    if (comment.user_id !== userId && req.user.role !== "admin") {
       return res
         .status(403)
         .json({ message: "Forbidden: You can only delete your own comments." });
     }
 
+    // Clean up MinIO file if attached
+    if (comment.file_key) {
+      try {
+        await minioClient.removeObject(BUCKET_NAME, comment.file_key);
+        console.log(`[MinIO] Removed object: ${comment.file_key}`);
+      } catch (minioErr) {
+        console.error("Failed to delete object from MinIO:", minioErr);
+      }
+    }
+
     await db.query("DELETE FROM comments WHERE id = $1", [commentId]);
 
-    // Broadcast to room
+    // Broadcast deletion to room
     req.app
       .get("io")
       ?.to(`task_${comment.task_id}`)
@@ -189,5 +253,29 @@ export const deleteComment = async (req, res) => {
   } catch (err) {
     console.error("Error deleting comment:", err);
     res.status(500).json({ message: "Failed to delete comment." });
+  }
+};
+
+export const serveAttachment = async (req, res) => {
+  const { fileKey } = req.params;
+
+  try {
+    const stat = await minioClient.statObject(BUCKET_NAME, fileKey);
+    if (stat.metaData && stat.metaData["content-type"]) {
+      res.setHeader("Content-Type", stat.metaData["content-type"]);
+    }
+    if (stat.size) {
+      res.setHeader("Content-Length", stat.size);
+    }
+    res.setHeader("Cache-Control", "public, max-age=86400");
+
+    const stream = await minioClient.getObject(BUCKET_NAME, fileKey);
+    stream.pipe(res);
+  } catch (err) {
+    console.error("Error serving attachment from MinIO:", err);
+    if (err.code === "NotFound" || err.message?.includes("Not Found")) {
+      return res.status(404).json({ message: "Attachment not found." });
+    }
+    res.status(500).json({ message: "Failed to stream attachment." });
   }
 };

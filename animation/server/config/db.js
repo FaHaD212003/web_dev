@@ -32,11 +32,28 @@ const ensureCommentTable = async () => {
       id SERIAL PRIMARY KEY,
       task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      content TEXT NOT NULL,
+      content TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+  await db.query("ALTER TABLE comments ADD COLUMN IF NOT EXISTS file_url TEXT");
+  await db.query(
+    "ALTER TABLE comments ADD COLUMN IF NOT EXISTS file_name VARCHAR(255)",
+  );
+  await db.query(
+    "ALTER TABLE comments ADD COLUMN IF NOT EXISTS file_size INTEGER",
+  );
+  await db.query(
+    "ALTER TABLE comments ADD COLUMN IF NOT EXISTS file_type VARCHAR(100)",
+  );
+  await db.query(
+    "ALTER TABLE comments ADD COLUMN IF NOT EXISTS file_key VARCHAR(255)",
+  );
+  // Make content nullable in case a comment is only an attachment
+  await db
+    .query("ALTER TABLE comments ALTER COLUMN content DROP NOT NULL")
+    .catch(() => {});
 };
 
 const ensureNotificationTable = async () => {

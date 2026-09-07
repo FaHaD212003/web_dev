@@ -18,6 +18,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Clock3,
+  Paperclip,
+  FileText,
+  Download,
 } from "lucide-react";
 
 const statusConfig = {
@@ -64,6 +67,14 @@ const formatTimeOnly = (dateString) => {
   });
 };
 
+const formatFileSize = (bytes) => {
+  if (!bytes || bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+};
+
 export default function TaskDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -75,6 +86,8 @@ export default function TaskDetailPage() {
   const [error, setError] = useState("");
 
   const [newComment, setNewComment] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadError, setUploadError] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   const [editingCommentId, setEditingCommentId] = useState(null);
@@ -84,6 +97,7 @@ export default function TaskDetailPage() {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
+  const fileInputRef = useRef(null);
   const commentsEndRef = useRef(null);
 
   const scrollToBottom = (smooth = true) => {
@@ -231,27 +245,65 @@ export default function TaskDetailPage() {
     }
   };
 
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 25 * 1024 * 1024) {
+      setUploadError("File size exceeds 25 MB limit.");
+      setTimeout(() => setUploadError(""), 4000);
+      return;
+    }
+
+    setUploadError("");
+    setSelectedFile(file);
+  };
+
   const handlePostComment = async (e) => {
     if (e) e.preventDefault();
-    if (!newComment.trim() || isSubmittingComment) return;
+    if ((!newComment.trim() && !selectedFile) || isSubmittingComment) return;
 
     try {
       setIsSubmittingComment(true);
+      setUploadError("");
       const token = localStorage.getItem("token");
+
+      const formData = new FormData();
+      if (newComment.trim()) {
+        formData.append("content", newComment.trim());
+      }
+      if (selectedFile) {
+        formData.append("file", selectedFile);
+      }
+
       const response = await axios.post(
         `http://localhost:3000/tasks/${id}/comments`,
-        { content: newComment.trim() },
-        { headers: { Authorization: `Bearer ${token}` } },
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        },
       );
 
       setComments((prev) => {
         if (prev.some((c) => c.id === response.data.id)) return prev;
         return [...prev, response.data];
       });
+
       setNewComment("");
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       setTimeout(() => scrollToBottom(true), 100);
     } catch (err) {
       console.error("Failed to post comment:", err);
+      setUploadError(
+        err.response?.data?.message || "Failed to post comment or file.",
+      );
+      setTimeout(() => setUploadError(""), 5000);
     } finally {
       setIsSubmittingComment(false);
     }
@@ -260,7 +312,7 @@ export default function TaskDetailPage() {
   // Handle Start Edit Comment
   const handleStartEdit = (comment) => {
     setEditingCommentId(comment.id);
-    setEditingContent(comment.content);
+    setEditingContent(comment.content || "");
   };
 
   const handleCancelEdit = () => {
@@ -493,6 +545,7 @@ export default function TaskDetailPage() {
                 <Clock
                   className={`h-4 w-4 shrink-0 mt-0.5 ${
                     task.due_date &&
+                    new Date(task.due_date) < new Date() &&
                     new Date(task.due_date).getTime() <= now &&
                     task.status !== "completed"
                       ? "text-red-500"
@@ -506,6 +559,7 @@ export default function TaskDetailPage() {
                   <span
                     className={
                       task.due_date &&
+                      new Date(task.due_date) < new Date() &&
                       new Date(task.due_date).getTime() <= now &&
                       task.status !== "completed"
                         ? "text-red-500 font-semibold"
@@ -560,7 +614,7 @@ export default function TaskDetailPage() {
                   No comments yet
                 </p>
                 <p className="text-xs text-zinc-500 max-w-xs mt-1">
-                  Be the first to share an update, progress note, or question
+                  Be the first to share an update, progress note, or attachment
                   about this task.
                 </p>
               </div>
@@ -605,7 +659,7 @@ export default function TaskDetailPage() {
 
                     {/* Bubble Content */}
                     <div
-                      className={`relative max-w-[85%] rounded-2xl px-4 py-3 shadow-sm dark:shadow-md ${
+                      className={`relative max-w-[88%] sm:max-w-[80%] rounded-2xl px-4 py-3 shadow-sm dark:shadow-md ${
                         isAuthor
                           ? "bg-cyan-50 dark:bg-zinc-900 border border-cyan-200 dark:border-cyan-500/20 text-zinc-900 dark:text-zinc-100 rounded-tr-sm"
                           : "bg-white dark:bg-zinc-950/90 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 rounded-tl-sm"
@@ -644,14 +698,93 @@ export default function TaskDetailPage() {
                         </div>
                       ) : (
                         /* Normal Comment Bubble */
-                        <div className="flex flex-col gap-1.5">
-                          <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                            {comment.content}
-                          </p>
+                        <div className="flex flex-col gap-2">
+                          {comment.content && (
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                              {comment.content}
+                            </p>
+                          )}
+
+                          {/* File / Image Attachment */}
+                          {comment.file_url && (
+                            <div className="mt-1">
+                              {comment.file_type?.startsWith("image/") ? (
+                                <div className="relative group/media overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-950/80 max-w-sm">
+                                  <a
+                                    href={comment.file_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block overflow-hidden"
+                                  >
+                                    <img
+                                      src={comment.file_url}
+                                      alt={comment.file_name || "Attachment"}
+                                      className="max-h-60 w-auto max-w-full rounded-xl object-contain hover:scale-[1.02] transition-transform duration-200"
+                                      loading="lazy"
+                                    />
+                                  </a>
+                                  <div className="flex items-center justify-between gap-2 p-2 bg-zinc-900/85 backdrop-blur-sm text-white text-[11px]">
+                                    <span
+                                      className="truncate max-w-[160px] font-medium"
+                                      title={comment.file_name}
+                                    >
+                                      {comment.file_name}
+                                    </span>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      {comment.file_size && (
+                                        <span className="text-zinc-400 text-[10px]">
+                                          {formatFileSize(comment.file_size)}
+                                        </span>
+                                      )}
+                                      <a
+                                        href={comment.file_url}
+                                        download={comment.file_name || "image"}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-1 rounded hover:bg-white/20 text-zinc-200 hover:text-white transition-colors"
+                                        title="Download image"
+                                      >
+                                        <Download className="h-3.5 w-3.5" />
+                                      </a>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/80 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors max-w-sm">
+                                  <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className="w-9 h-9 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
+                                      <FileText className="h-5 w-5" />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p
+                                        className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate"
+                                        title={comment.file_name}
+                                      >
+                                        {comment.file_name || "Attachment"}
+                                      </p>
+                                      <p className="text-[10px] text-zinc-500">
+                                        {formatFileSize(comment.file_size)}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <a
+                                    href={comment.file_url}
+                                    download={comment.file_name || "file"}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-2 rounded-lg bg-zinc-200 dark:bg-zinc-800 hover:bg-cyan-500 hover:text-black dark:hover:bg-cyan-500 dark:hover:text-black text-zinc-700 dark:text-zinc-300 transition-colors shrink-0"
+                                    title="Download attachment"
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                          )}
 
                           {/* Action Buttons: Only for Comment Author */}
                           {isAuthor && (
-                            <div className="flex items-center justify-end gap-2 pt-1 mt-1 border-t border-zinc-200/60 dark:border-zinc-700/40 opacity-70 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center justify-end gap-2 pt-1 mt-0.5 border-t border-zinc-200/60 dark:border-zinc-700/40 opacity-70 group-hover:opacity-100 transition-opacity">
                               <button
                                 onClick={() => handleStartEdit(comment)}
                                 className="text-zinc-500 hover:text-cyan-600 dark:text-zinc-400 dark:hover:text-cyan-400 transition-colors p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700/40 text-[11px] inline-flex items-center gap-1"
@@ -681,29 +814,94 @@ export default function TaskDetailPage() {
           </div>
 
           {/* Bottom Chat Compose Input Bar */}
-          <form
-            onSubmit={handlePostComment}
-            className="p-4 border-t border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/80 dark:bg-zinc-950/80 flex items-center gap-3"
-          >
-            <div className="flex-1 relative">
-              <textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Write a comment... (Press Enter to send)"
-                rows={1}
-                className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-cyan-500 resize-none min-h-[46px] max-h-[120px] transition-colors"
+          <div className="p-4 border-t border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/80 dark:bg-zinc-950/80 flex flex-col gap-2">
+            {/* Error Message if file too large or upload fails */}
+            {uploadError && (
+              <div className="px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2 animate-fadeIn">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                <span>{uploadError}</span>
+              </div>
+            )}
+
+            {/* Selected File Preview Chip */}
+            {selectedFile && (
+              <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-800 dark:text-cyan-300 text-xs">
+                <div className="flex items-center gap-2 truncate">
+                  <Paperclip className="h-3.5 w-3.5 shrink-0 text-cyan-500" />
+                  <span className="font-semibold truncate max-w-xs">
+                    {selectedFile.name}
+                  </span>
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                    ({formatFileSize(selectedFile.size)})
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedFile(null);
+                    if (fileInputRef.current) fileInputRef.current.value = "";
+                  }}
+                  className="p-1 rounded-full hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 transition-colors shrink-0"
+                  title="Remove attached file"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+
+            <form onSubmit={handlePostComment} className="flex items-end gap-2">
+              {/* Hidden File Input */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                className="hidden"
               />
-            </div>
-            <button
-              type="submit"
-              disabled={isSubmittingComment || !newComment.trim()}
-              className="h-[46px] px-5 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 font-bold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md shrink-0"
-            >
-              <Send className="h-4 w-4" />
-              <span className="hidden sm:inline">Send</span>
-            </button>
-          </form>
+
+              {/* Attach Button */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isSubmittingComment}
+                className="h-[46px] w-[46px] rounded-xl border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-cyan-500 dark:hover:text-cyan-400 flex items-center justify-center transition-colors shrink-0 disabled:opacity-50 shadow-sm"
+                title="Attach file or image"
+              >
+                <Paperclip className="h-4 w-4" />
+              </button>
+
+              {/* Text Area */}
+              <div className="flex-1 relative">
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={
+                    selectedFile
+                      ? "Add a comment with your file... (optional)"
+                      : "Write a comment... (Press Enter to send)"
+                  }
+                  rows={1}
+                  className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-cyan-500 resize-none min-h-[46px] max-h-[120px] transition-colors shadow-sm"
+                />
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={
+                  isSubmittingComment || (!newComment.trim() && !selectedFile)
+                }
+                className="h-[46px] px-5 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 font-bold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md shrink-0"
+              >
+                {isSubmittingComment ? (
+                  <div className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                <span className="hidden sm:inline">Send</span>
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     </div>
