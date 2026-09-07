@@ -45,7 +45,9 @@ export default function UserSearchPanel({
         } else {
           setUsers((prev) => {
             const existingIds = new Set(prev.map((u) => u.id));
-            const newUnique = fetchedUsers.filter((u) => !existingIds.has(u.id));
+            const newUnique = fetchedUsers.filter(
+              (u) => !existingIds.has(u.id),
+            );
             return [...prev, ...newUnique];
           });
         }
@@ -109,16 +111,20 @@ export default function UserSearchPanel({
   }, [hasMore, isLoadingInitial, isLoadingMore, page, query, fetchUsers]);
 
   return (
-    <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 shadow-xl shadow-black/20 backdrop-blur-sm w-full">
+    <section className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-sm dark:shadow-xl w-full transition-colors">
       <div className="flex items-start justify-between gap-4 mb-5">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500">
             Admin tool
           </p>
-          <h3 className="text-xl font-black text-white mt-1">{title}</h3>
-          <p className="text-sm text-zinc-400 mt-1">{description}</p>
+          <h3 className="text-xl font-black text-zinc-900 dark:text-white mt-1">
+            {title}
+          </h3>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+            {description}
+          </p>
         </div>
-        <div className="h-10 w-10 rounded-xl bg-white/5 border border-zinc-800 flex items-center justify-center text-zinc-300">
+        <div className="h-10 w-10 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300">
           <Search className="h-4 w-4" />
         </div>
       </div>
@@ -138,7 +144,7 @@ export default function UserSearchPanel({
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Type a name or email..."
-        className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-zinc-600 focus:border-cyan-500/60"
+        className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/80 px-4 py-3 text-sm text-zinc-900 dark:text-white outline-none transition-colors placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:border-cyan-500/60"
       />
 
       <div
@@ -147,12 +153,12 @@ export default function UserSearchPanel({
         }`}
       >
         {isLoadingInitial ? (
-          <div className="flex items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-zinc-950/70 px-4 py-6 text-sm text-zinc-400 font-semibold">
+          <div className="flex items-center justify-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/70 px-4 py-6 text-sm text-zinc-500 dark:text-zinc-400 font-semibold">
             <div className="h-4 w-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
             Searching users...
           </div>
         ) : users.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-950/50 px-4 py-6 text-sm text-zinc-500 text-center font-medium">
+          <div className="rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/50 px-4 py-6 text-sm text-zinc-500 text-center font-medium">
             No users found matching "{query}".
           </div>
         ) : (
@@ -162,14 +168,14 @@ export default function UserSearchPanel({
                 key={user.id}
                 type="button"
                 onClick={() => navigate(`/admin-users/${user.id}`)}
-                className="flex w-full items-center justify-between gap-4 rounded-xl border border-zinc-800 bg-zinc-950/80 px-4 py-4 text-left transition-all hover:border-zinc-700 hover:bg-zinc-900 group"
+                className="flex w-full items-center justify-between gap-4 rounded-xl border border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-zinc-950/80 px-4 py-4 text-left transition-all hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-100/80 dark:hover:bg-zinc-900 group"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 group-hover:border-cyan-500/40 transition-colors">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-500 dark:text-cyan-300 border border-cyan-500/20 group-hover:border-cyan-500/40 transition-colors">
                     <UserRound className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
-                    <div className="truncate font-semibold text-white group-hover:text-cyan-400 transition-colors">
+                    <div className="truncate font-semibold text-zinc-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
                       {user.email}
                     </div>
                     <div className="text-xs uppercase tracking-[0.2em] text-zinc-500">
@@ -178,7 +184,7 @@ export default function UserSearchPanel({
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-2 shrink-0">
-                  <span className="rounded-full border border-zinc-700 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-300">
+                  <span className="rounded-full border border-zinc-200 dark:border-zinc-700 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-transparent">
                     {user.role || "user"}
                   </span>
                   {user.is_revoked ? (
@@ -195,7 +201,10 @@ export default function UserSearchPanel({
             ))}
 
             {/* Infinite scroll sentinel for user directory */}
-            <div ref={sentinelRef} className="h-8 flex items-center justify-center pt-2">
+            <div
+              ref={sentinelRef}
+              className="h-8 flex items-center justify-center pt-2"
+            >
               {isLoadingMore && (
                 <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400 py-2">
                   <div className="h-4 w-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />

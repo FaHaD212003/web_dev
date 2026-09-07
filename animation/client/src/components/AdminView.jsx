@@ -19,7 +19,8 @@ export default function AdminView() {
   const [activeDropStatus, setActiveDropStatus] = useState("");
 
   const sentinelRef = useRef(null);
-  const { sidebarCreateTrigger, setSidebarCreateTrigger } = useOutletContext();
+  const { sidebarCreateTrigger, setSidebarCreateTrigger, theme } =
+    useOutletContext();
 
   useEffect(() => {
     if (sidebarCreateTrigger) {
@@ -157,6 +158,7 @@ export default function AdminView() {
         description: task.description,
         status,
         assignee_id: task.assignee_id,
+        due_date: task.due_date,
       },
       {
         headers: { Authorization: `Bearer ${token}` },
@@ -211,13 +213,17 @@ export default function AdminView() {
       <div
         onDragOver={(event) => handleDragOver(event, statusKey)}
         onDrop={(event) => handleDrop(event, statusKey)}
-        className={`flex flex-col gap-4 bg-zinc-900/60 border-t-4 ${accentBorder} border border-zinc-800 rounded-xl p-4 min-h-[550px] transition-colors ${
-          activeDropStatus === statusKey ? "bg-zinc-900 border-zinc-700" : ""
+        className={`flex flex-col gap-4 bg-white dark:bg-black border-t-4 ${accentBorder} border border-zinc-200 dark:border-zinc-800/80 rounded-2xl p-4 min-h-[550px] shadow-sm dark:shadow-2xl transition-all ${
+          activeDropStatus === statusKey
+            ? "bg-zinc-50 dark:bg-zinc-950 border-zinc-400 dark:border-zinc-700"
+            : ""
         }`}
       >
         <div className="flex justify-between items-center mb-2">
-          <h3 className="font-bold text-lg text-white">{title}</h3>
-          <span className="text-xs font-semibold bg-zinc-800 px-2 py-1 rounded text-zinc-400">
+          <h3 className="font-bold text-lg text-zinc-900 dark:text-white">
+            {title}
+          </h3>
+          <span className="text-xs font-semibold bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-2.5 py-1 rounded-lg text-zinc-700 dark:text-zinc-400">
             {filteredTasks.length}
           </span>
         </div>
@@ -226,6 +232,7 @@ export default function AdminView() {
             <TaskCard
               key={task.id}
               task={task}
+              theme={theme}
               onEdit={openEditForm}
               onDelete={handleDelete}
               onDragStart={handleDragStart}
@@ -239,7 +246,7 @@ export default function AdminView() {
 
   if (isLoadingInitial) {
     return (
-      <div className="flex h-72 items-center justify-center text-zinc-500">
+      <div className="flex h-72 items-center justify-center text-zinc-500 dark:text-zinc-400">
         <div className="flex items-center gap-2 text-sm font-semibold">
           <div className="h-5 w-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
           Loading master task list...
@@ -252,15 +259,17 @@ export default function AdminView() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Global Task Overview</h2>
-          <p className="text-xs text-zinc-400 mt-1">
+          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
+            Global Task Overview
+          </h2>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
             Showing {tasks.length} of {totalTasks} system tasks
           </p>
         </div>
       </div>
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded-md text-sm">
+        <div className="bg-red-500/10 border border-red-500/50 text-red-500 dark:text-red-400 p-3 rounded-md text-sm">
           {error}
         </div>
       )}
@@ -273,7 +282,10 @@ export default function AdminView() {
       </div>
 
       {/* Infinite Scroll Sentinel & Indicators */}
-      <div ref={sentinelRef} className="h-8 flex items-center justify-center mt-4">
+      <div
+        ref={sentinelRef}
+        className="h-8 flex items-center justify-center mt-4"
+      >
         {isLoadingMore && (
           <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400 py-3">
             <div className="h-4 w-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />

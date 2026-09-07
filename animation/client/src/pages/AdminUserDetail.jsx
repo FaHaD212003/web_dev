@@ -21,24 +21,24 @@ const statusCards = [
 
 const colorStyles = {
   cyan: {
-    card: "border-cyan-500/20 bg-cyan-500/10",
-    icon: "border-cyan-500/20 bg-black/20 text-cyan-300",
+    card: "border-cyan-500/20 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",
+    icon: "border-cyan-500/20 bg-cyan-500/10 text-cyan-600 dark:text-cyan-300",
   },
   violet: {
-    card: "border-violet-500/20 bg-violet-500/10",
-    icon: "border-violet-500/20 bg-black/20 text-violet-300",
+    card: "border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-400",
+    icon: "border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-300",
   },
   emerald: {
-    card: "border-emerald-500/20 bg-emerald-500/10",
-    icon: "border-emerald-500/20 bg-black/20 text-emerald-300",
+    card: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    icon: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
   },
   amber: {
-    card: "border-amber-500/20 bg-amber-500/10",
-    icon: "border-amber-500/20 bg-black/20 text-amber-300",
+    card: "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    icon: "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300",
   },
   blue: {
-    card: "border-blue-500/20 bg-blue-500/10",
-    icon: "border-blue-500/20 bg-black/20 text-blue-300",
+    card: "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400",
+    icon: "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-300",
   },
 };
 
@@ -49,12 +49,14 @@ function MetricCard({ label, value, color, icon: Icon }) {
     <div className={`rounded-2xl border p-5 ${styles.card}`}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">
+          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500 dark:text-zinc-400">
             {label}
           </p>
-          <div className="mt-2 text-3xl font-black text-white">{value}</div>
+          <div className="mt-2 text-3xl font-black text-zinc-900 dark:text-white">
+            {value}
+          </div>
         </div>
-        <div className={`rounded-xl border bg-black/20 p-3 ${styles.icon}`}>
+        <div className={`rounded-xl border p-3 ${styles.icon}`}>
           <Icon className="h-5 w-5" />
         </div>
       </div>
@@ -155,7 +157,7 @@ export default function AdminUserDetail() {
           <button
             type="button"
             onClick={() => navigate("/admin-users")}
-            className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/60 px-4 py-2 text-sm font-semibold text-zinc-300 transition-colors hover:bg-zinc-800"
+            className="inline-flex items-center gap-2 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black px-4 py-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 shadow-sm"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to users
@@ -163,16 +165,16 @@ export default function AdminUserDetail() {
           <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500">
             User profile
           </p>
-          <h2 className="mt-2 text-4xl font-black tracking-tight text-white">
+          <h2 className="mt-2 text-4xl font-black tracking-tight text-zinc-900 dark:text-white">
             {data?.user?.email || "Loading user..."}
           </h2>
-          <p className="mt-2 text-sm text-zinc-400">
+          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
             Detailed task ownership and status breakdown for this account.
           </p>
         </div>
 
         {data?.user?.role && (
-          <span className="inline-flex w-fit rounded-full border border-zinc-700 bg-zinc-900 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-zinc-300">
+          <span className="inline-flex w-fit rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-zinc-800 dark:text-zinc-300 shadow-sm">
             {data.user.role}
           </span>
         )}
@@ -180,21 +182,21 @@ export default function AdminUserDetail() {
 
       {data?.user && (
         <div className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 shadow-xl shadow-black/10">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-sm dark:shadow-xl">
             <div className="flex items-center gap-3">
-              <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-3 text-cyan-300">
+              <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-3 text-cyan-600 dark:text-cyan-300">
                 <Crown className="h-5 w-5" />
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">
                   Role management
                 </p>
-                <h3 className="text-lg font-black text-white">
+                <h3 className="text-lg font-black text-zinc-900 dark:text-white">
                   Promote or demote
                 </h3>
               </div>
             </div>
-            <p className="mt-3 text-sm text-zinc-400">
+            <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
               Switch this account between admin and user access.
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -203,7 +205,7 @@ export default function AdminUserDetail() {
                   type="button"
                   onClick={makeAdmin}
                   disabled={isUpdating}
-                  className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-black transition-colors hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50 shadow-lg shadow-white/5"
+                  className="inline-flex items-center gap-2 rounded-xl bg-zinc-900 dark:bg-white px-4 py-3 text-sm font-bold text-white dark:text-black transition-colors hover:bg-zinc-800 dark:hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm"
                 >
                   <ShieldCheck className="h-4 w-4" />
                   Make Admin
@@ -211,8 +213,8 @@ export default function AdminUserDetail() {
               )}
               {data.user.role === "admin" &&
                 (isSelf ? (
-                  <span className="inline-flex items-center gap-2 rounded-xl border border-zinc-700/60 bg-zinc-950/60 px-4 py-3 text-xs font-semibold text-zinc-400">
-                    <ShieldCheck className="h-4 w-4 text-cyan-400" />
+                  <span className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-zinc-50 dark:bg-zinc-950/60 px-4 py-3 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+                    <ShieldCheck className="h-4 w-4 text-cyan-500 dark:text-cyan-400" />
                     Current Admin Account
                   </span>
                 ) : (
@@ -220,7 +222,7 @@ export default function AdminUserDetail() {
                     type="button"
                     onClick={makeUser}
                     disabled={isUpdating}
-                    className="inline-flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-950 px-4 py-3 text-sm font-bold text-zinc-900 dark:text-white transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <ShieldOff className="h-4 w-4" />
                     Make User
@@ -229,27 +231,27 @@ export default function AdminUserDetail() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 shadow-xl shadow-black/10">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-sm dark:shadow-xl">
             <div className="flex items-center gap-3">
-              <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-red-300">
+              <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-red-500 dark:text-red-300">
                 <ShieldAlert className="h-5 w-5" />
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">
                   Access control
                 </p>
-                <h3 className="text-lg font-black text-white">
+                <h3 className="text-lg font-black text-zinc-900 dark:text-white">
                   Revoke or restore
                 </h3>
               </div>
             </div>
-            <p className="mt-3 text-sm text-zinc-400">
+            <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
               Revoked users cannot log in or continue using protected routes.
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-3">
               {isSelf ? (
-                <span className="inline-flex items-center gap-2 rounded-xl border border-zinc-700/60 bg-zinc-950/60 px-4 py-3 text-xs font-semibold text-zinc-400">
-                  <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                <span className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-zinc-50 dark:bg-zinc-950/60 px-4 py-3 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+                  <ShieldCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
                   You cannot revoke your own account
                 </span>
               ) : data.user.is_revoked ? (
@@ -257,7 +259,7 @@ export default function AdminUserDetail() {
                   type="button"
                   onClick={restoreUser}
                   disabled={isUpdating}
-                  className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-300 transition-colors hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50 shadow-lg shadow-emerald-500/10"
+                  className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-600 dark:text-emerald-300 transition-colors hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm"
                 >
                   <ShieldCheck className="h-4 w-4" />
                   Restore Access
@@ -267,7 +269,7 @@ export default function AdminUserDetail() {
                   type="button"
                   onClick={revokeUser}
                   disabled={isUpdating}
-                  className="inline-flex items-center gap-2 rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm font-bold text-red-300 transition-colors hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50 shadow-lg shadow-red-500/10"
+                  className="inline-flex items-center gap-2 rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm font-bold text-red-600 dark:text-red-300 transition-colors hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm"
                 >
                   <ShieldAlert className="h-4 w-4" />
                   Revoke Access
@@ -279,17 +281,17 @@ export default function AdminUserDetail() {
       )}
 
       {actionError && (
-        <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-300">
+        <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-600 dark:text-red-300">
           {actionError}
         </div>
       )}
 
       {isLoading ? (
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 text-zinc-500">
+        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black p-6 text-zinc-500">
           Loading user details...
         </div>
       ) : error ? (
-        <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-300">
+        <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-600 dark:text-red-300">
           {error}
         </div>
       ) : (
@@ -316,16 +318,16 @@ export default function AdminUserDetail() {
           </div>
 
           <div className="grid gap-6 xl:grid-cols-2">
-            <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 shadow-xl shadow-black/10">
+            <section className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-sm dark:shadow-xl">
               <div className="flex items-center gap-3 mb-5">
-                <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-3 text-cyan-300">
+                <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-3 text-cyan-600 dark:text-cyan-300">
                   <ClipboardList className="h-5 w-5" />
                 </div>
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">
                     Tasks assigned to user
                   </p>
-                  <h3 className="text-xl font-black text-white">
+                  <h3 className="text-xl font-black text-zinc-900 dark:text-white">
                     Task state breakdown
                   </h3>
                 </div>
@@ -337,10 +339,10 @@ export default function AdminUserDetail() {
                     key={card.key}
                     className={`rounded-2xl border p-4 ${colorStyles[card.color].card}`}
                   >
-                    <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500 dark:text-zinc-400">
                       {card.label}
                     </p>
-                    <div className="mt-2 text-3xl font-black text-white">
+                    <div className="mt-2 text-3xl font-black text-zinc-900 dark:text-white">
                       {assignedStatus[card.key] || 0}
                     </div>
                   </div>
@@ -348,16 +350,16 @@ export default function AdminUserDetail() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 shadow-xl shadow-black/10">
+            <section className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-sm dark:shadow-xl">
               <div className="flex items-center gap-3 mb-5">
-                <div className="rounded-xl border border-violet-500/20 bg-violet-500/10 p-3 text-violet-300">
+                <div className="rounded-xl border border-violet-500/20 bg-violet-500/10 p-3 text-violet-600 dark:text-violet-300">
                   <UserPlus2 className="h-5 w-5" />
                 </div>
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">
                     Tasks assigned by user
                   </p>
-                  <h3 className="text-xl font-black text-white">
+                  <h3 className="text-xl font-black text-zinc-900 dark:text-white">
                     Delegated work breakdown
                   </h3>
                 </div>
@@ -369,33 +371,33 @@ export default function AdminUserDetail() {
                     key={card.key}
                     className={`rounded-2xl border p-4 ${colorStyles[card.color].card}`}
                   >
-                    <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500 dark:text-zinc-400">
                       {card.label}
                     </p>
-                    <div className="mt-2 text-3xl font-black text-white">
+                    <div className="mt-2 text-3xl font-black text-zinc-900 dark:text-white">
                       {createdStatus[card.key] || 0}
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-5 rounded-2xl border border-dashed border-zinc-800 bg-zinc-950/50 p-4 text-sm text-zinc-400">
+              <div className="mt-5 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/50 p-4 text-sm text-zinc-600 dark:text-zinc-400">
                 Tasks created by this user for others:{" "}
                 {data.stats.assignedByUser}
               </div>
             </section>
           </div>
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 shadow-xl shadow-black/10">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-sm dark:shadow-xl">
             <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">
               Summary
             </p>
             <div className="mt-2 grid gap-3 md:grid-cols-2">
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4 text-sm text-zinc-300">
+              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/60 p-4 text-sm text-zinc-700 dark:text-zinc-300">
                 This user currently has {data.stats.assignedToUser} task(s)
                 assigned to them.
               </div>
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4 text-sm text-zinc-300">
+              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/60 p-4 text-sm text-zinc-700 dark:text-zinc-300">
                 They created {data.stats.assignedByUser} task(s) for other
                 users.
               </div>

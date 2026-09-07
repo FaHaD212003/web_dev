@@ -18,6 +18,12 @@ const ensureTaskColumns = async () => {
   await db.query(
     "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()",
   );
+  await db.query(
+    "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS due_date TIMESTAMPTZ",
+  );
+  await db.query(
+    "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS due_date_notified BOOLEAN NOT NULL DEFAULT FALSE",
+  );
 };
 
 const ensureCommentTable = async () => {
@@ -33,12 +39,28 @@ const ensureCommentTable = async () => {
   `);
 };
 
+const ensureNotificationTable = async () => {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
+      title VARCHAR(255) NOT NULL,
+      message TEXT NOT NULL,
+      type VARCHAR(50) NOT NULL DEFAULT 'task_assigned',
+      is_read BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+};
+
 db.connect()
   .then(async () => {
     console.log("Connected to PostgreSQL");
     try {
       await ensureTaskColumns();
       await ensureCommentTable();
+      await ensureNotificationTable();
     } catch (err) {
       console.error("Failed to ensure database schema columns/tables", err);
     }

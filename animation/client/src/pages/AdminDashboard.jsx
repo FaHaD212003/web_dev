@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { Link } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import {
   Bar,
   BarChart,
@@ -32,6 +32,7 @@ const statusColors = {
 const pieColors = ["#f59e0b", "#3b82f6", "#10b981"];
 
 export default function AdminDashboard() {
+  const { theme } = useOutletContext() || {};
   const [range, setRange] = useState("weekly");
   const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -145,16 +146,16 @@ export default function AdminDashboard() {
           <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500">
             Admin dashboard
           </p>
-          <h2 className="mt-2 text-4xl font-black tracking-tight text-white">
+          <h2 className="mt-2 text-4xl font-black tracking-tight text-zinc-900 dark:text-white">
             Dashboard command center
           </h2>
-          <p className="mt-2 max-w-2xl text-sm text-zinc-400">
+          <p className="mt-2 max-w-2xl text-sm text-zinc-600 dark:text-zinc-400">
             Monitor users, task volume, and task state distribution. Switch the
             time window to see weekly, monthly, or yearly activity.
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-2">
+        <div className="flex flex-wrap gap-2 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black p-2 shadow-sm">
           {ranges.map((option) => (
             <button
               key={option.key}
@@ -162,8 +163,8 @@ export default function AdminDashboard() {
               onClick={() => setRange(option.key)}
               className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
                 range === option.key
-                  ? "bg-white text-black"
-                  : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                  ? "bg-zinc-900 text-white dark:bg-white dark:text-black shadow-sm"
+                  : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white"
               }`}
             >
               {option.label}
@@ -173,13 +174,13 @@ export default function AdminDashboard() {
       </section>
 
       {error && (
-        <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-300">
+        <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-600 dark:text-red-300">
           {error}
         </div>
       )}
 
       {isLoading ? (
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 text-zinc-500">
+        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black p-6 text-zinc-500">
           Loading dashboard analytics...
         </div>
       ) : (
@@ -191,18 +192,18 @@ export default function AdminDashboard() {
               return (
                 <div
                   key={card.label}
-                  className={`rounded-2xl border border-zinc-800 bg-gradient-to-br ${card.accent} p-4 sm:p-5 shadow-xl shadow-black/10 overflow-hidden flex flex-col justify-between`}
+                  className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black p-4 sm:p-5 shadow-sm overflow-hidden flex flex-col justify-between"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 truncate">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400 truncate">
                         {card.label}
                       </p>
-                      <div className="mt-2 text-2xl sm:text-3xl font-black text-white truncate">
+                      <div className="mt-2 text-2xl sm:text-3xl font-black text-zinc-900 dark:text-white truncate">
                         {card.value}
                       </div>
                     </div>
-                    <div className="shrink-0 rounded-xl border border-white/10 bg-black/30 p-2.5 sm:p-3 text-white">
+                    <div className="shrink-0 rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-100 dark:bg-zinc-900/80 p-2.5 sm:p-3 text-zinc-800 dark:text-white">
                       <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
                   </div>
@@ -214,13 +215,13 @@ export default function AdminDashboard() {
           {/* Charts & Side Tools */}
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.9fr)]">
             <div className="grid gap-6 lg:grid-cols-2">
-              <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 shadow-xl shadow-black/10">
+              <section className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-sm">
                 <div className="mb-5 flex items-center justify-between gap-4">
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">
                       Task trend
                     </p>
-                    <h3 className="mt-1 text-xl font-black text-white">
+                    <h3 className="mt-1 text-xl font-black text-zinc-900 dark:text-white">
                       {range} activity by status
                     </h3>
                   </div>
@@ -228,15 +229,28 @@ export default function AdminDashboard() {
                 <div className="h-[340px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                      <XAxis dataKey="label" stroke="#71717a" />
-                      <YAxis stroke="#71717a" allowDecimals={false} />
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke={theme === "light" ? "#e4e4e7" : "#27272a"}
+                      />
+                      <XAxis
+                        dataKey="label"
+                        stroke={theme === "light" ? "#71717a" : "#a1a1aa"}
+                      />
+                      <YAxis
+                        stroke={theme === "light" ? "#71717a" : "#a1a1aa"}
+                        allowDecimals={false}
+                      />
                       <Tooltip
                         contentStyle={{
-                          background: "#09090b",
-                          border: "1px solid #27272a",
+                          background: theme === "light" ? "#ffffff" : "#09090b",
+                          border:
+                            theme === "light"
+                              ? "1px solid #e4e4e7"
+                              : "1px solid #27272a",
                           borderRadius: 12,
-                          color: "#fff",
+                          color: theme === "light" ? "#09090b" : "#ffffff",
+                          boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
                         }}
                       />
                       <Legend />
@@ -263,13 +277,13 @@ export default function AdminDashboard() {
                 </div>
               </section>
 
-              <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 shadow-xl shadow-black/10">
+              <section className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-sm">
                 <div className="mb-5 flex items-center justify-between gap-4">
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">
                       State distribution
                     </p>
-                    <h3 className="mt-1 text-xl font-black text-white">
+                    <h3 className="mt-1 text-xl font-black text-zinc-900 dark:text-white">
                       Task status breakdown
                     </h3>
                   </div>
@@ -291,10 +305,14 @@ export default function AdminDashboard() {
                       </Pie>
                       <Tooltip
                         contentStyle={{
-                          background: "#09090b",
-                          border: "1px solid #27272a",
+                          background: theme === "light" ? "#ffffff" : "#09090b",
+                          border:
+                            theme === "light"
+                              ? "1px solid #e4e4e7"
+                              : "1px solid #27272a",
                           borderRadius: 12,
-                          color: "#fff",
+                          color: theme === "light" ? "#09090b" : "#ffffff",
+                          boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
                         }}
                       />
                       <Legend />
@@ -311,20 +329,20 @@ export default function AdminDashboard() {
                 compact
               />
 
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 shadow-xl shadow-black/10">
+              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black p-5 shadow-sm">
                 <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">
                   Shortcuts
                 </p>
-                <h3 className="mt-1 text-lg font-black text-white">
+                <h3 className="mt-1 text-lg font-black text-zinc-900 dark:text-white">
                   User management
                 </h3>
-                <p className="mt-2 text-sm text-zinc-400">
+                <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
                   Use the Users tab to browse the admin directory, then open any
                   profile for a deeper task breakdown.
                 </p>
                 <Link
                   to="/admin-users"
-                  className="mt-4 inline-flex items-center justify-center rounded-xl border border-white/10 bg-white px-4 py-3 text-sm font-bold text-black transition-colors hover:bg-zinc-200"
+                  className="mt-4 inline-flex items-center justify-center rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-900 dark:bg-white px-4 py-3 text-sm font-bold text-white dark:text-black transition-colors hover:bg-zinc-800 dark:hover:bg-zinc-200"
                 >
                   Open Users page
                 </Link>

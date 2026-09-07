@@ -12,6 +12,8 @@ import { verifyToken } from "./middleware/authMiddleware.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import { startDueTaskScheduler } from "./utils/dueTaskScheduler.js";
 import swaggerUi from "swagger-ui-express";
 import fs from "fs";
 
@@ -24,7 +26,12 @@ const server = http.createServer(app);
 
 const io = new SocketIOServer(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "http://localhost:5175",
+      "http://localhost:3000",
+    ],
     credentials: true,
   },
 });
@@ -32,6 +39,7 @@ const io = new SocketIOServer(server, {
 app.set("io", io);
 
 io.on("connection", (socket) => {
+  // Task discussion rooms
   socket.on("task:join", (taskId) => {
     if (taskId) {
       socket.join(`task_${taskId}`);
@@ -41,6 +49,25 @@ io.on("connection", (socket) => {
   socket.on("task:leave", (taskId) => {
     if (taskId) {
       socket.leave(`task_${taskId}`);
+    }
+  });
+
+  // User-specific notification rooms
+  socket.on("user:join", (userId) => {
+    if (userId) {
+      const room = `user_${userId}`;
+      socket.join(room);
+      console.log(
+        `[Socket] User #${userId} joined room ${room} (Socket ID: ${socket.id})`,
+      );
+    }
+  });
+
+  socket.on("user:leave", (userId) => {
+    if (userId) {
+      const room = `user_${userId}`;
+      socket.leave(room);
+      console.log(`[Socket] User #${userId} left room ${room}`);
     }
   });
 });
@@ -65,7 +92,9 @@ app.use("/", authRoutes);
 app.use("/tasks", taskRoutes);
 app.use("/tasks", commentRoutes);
 app.use("/users", userRoutes);
+app.use("/notifications", notificationRoutes);
 
 server.listen(port, () => {
   console.log(`Server running on port ${port}`);
+  startDueTaskScheduler(io);
 });

@@ -49,25 +49,25 @@ export default function AdminUsersPage() {
           <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500">
             Admin users
           </p>
-          <h2 className="mt-2 text-4xl font-black tracking-tight text-white">
+          <h2 className="mt-2 text-4xl font-black tracking-tight text-zinc-900 dark:text-white">
             User directory
           </h2>
-          <p className="mt-2 max-w-2xl text-sm text-zinc-400">
+          <p className="mt-2 max-w-2xl text-sm text-zinc-500 dark:text-zinc-400">
             Browse the full admin user list, search by email, and jump directly
             to a profile.
           </p>
         </div>
 
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 px-5 py-4 shadow-xl shadow-black/10">
+        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black px-5 py-4 shadow-sm dark:shadow-xl">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-3 text-cyan-300">
+            <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-3 text-cyan-500 dark:text-cyan-300">
               <Users className="h-5 w-5" />
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">
                 Registered users
               </p>
-              <div className="text-3xl font-black text-white">
+              <div className="text-3xl font-black text-zinc-900 dark:text-white">
                 {isLoading ? "..." : totalUsers}
               </div>
             </div>

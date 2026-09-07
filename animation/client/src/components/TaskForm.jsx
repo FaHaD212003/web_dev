@@ -1,11 +1,25 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
+const toDateTimeLocal = (isoString) => {
+  if (!isoString) return "";
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return "";
+  const pad = (num) => String(num).padStart(2, "0");
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
 export default function TaskForm({ isOpen, onClose, onSubmit, initialData }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("pending");
   const [assigneeId, setAssigneeId] = useState("");
+  const [dueDate, setDueDate] = useState("");
   const [roster, setRoster] = useState([]);
 
   useEffect(() => {
@@ -13,11 +27,14 @@ export default function TaskForm({ isOpen, onClose, onSubmit, initialData }) {
       const fetchRoster = async () => {
         try {
           const token = localStorage.getItem("token");
-          const response = await axios.get("http://localhost:3000/users/employees", {
-            headers: {
-              Authorization: `Bearer ${token}`,
+          const response = await axios.get(
+            "http://localhost:3000/users/employees",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
             },
-          });
+          );
           setRoster(response.data);
         } catch (err) {
           setRoster([]);
@@ -33,11 +50,13 @@ export default function TaskForm({ isOpen, onClose, onSubmit, initialData }) {
       setDescription(initialData.description || "");
       setStatus(initialData.status || "pending");
       setAssigneeId(initialData.assignee_id || "");
+      setDueDate(toDateTimeLocal(initialData.due_date));
     } else {
       setTitle("");
       setDescription("");
       setStatus("pending");
       setAssigneeId("");
+      setDueDate("");
     }
   }, [initialData, isOpen]);
 
@@ -48,10 +67,10 @@ export default function TaskForm({ isOpen, onClose, onSubmit, initialData }) {
       description,
       status,
       assignee_id: assigneeId,
+      due_date: dueDate ? new Date(dueDate).toISOString() : null,
     });
   };
 
-  
   const handleOverlayClick = (e) => {
     if (e.target.id === "modal-overlay") {
       onClose();
@@ -61,13 +80,12 @@ export default function TaskForm({ isOpen, onClose, onSubmit, initialData }) {
   if (!isOpen) return null;
 
   return (
-    
-    <div 
+    <div
       id="modal-overlay"
       onClick={handleOverlayClick}
       className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
     >
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 w-full max-w-md shadow-2xl">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-bold text-white mb-6">
           {initialData ? "Edit Task" : "Create New Task"}
         </h2>
@@ -82,6 +100,7 @@ export default function TaskForm({ isOpen, onClose, onSubmit, initialData }) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
+              placeholder="Enter task title"
               className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-zinc-500 transition-colors"
             />
           </div>
@@ -94,6 +113,7 @@ export default function TaskForm({ isOpen, onClose, onSubmit, initialData }) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows="3"
+              placeholder="Provide more context..."
               className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-zinc-500 transition-colors resize-none"
             />
           </div>
@@ -108,13 +128,27 @@ export default function TaskForm({ isOpen, onClose, onSubmit, initialData }) {
               required
               className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-zinc-500 transition-colors appearance-none"
             >
-              <option value="" disabled>Select an employee</option>
+              <option value="" disabled>
+                Select an employee
+              </option>
               {roster.map((employee) => (
                 <option key={employee.id} value={employee.id}>
                   {employee.email}
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">
+              Due Date & Time
+            </label>
+            <input
+              type="datetime-local"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-zinc-500 transition-colors [color-scheme:dark]"
+            />
           </div>
 
           <div>
