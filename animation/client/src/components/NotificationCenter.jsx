@@ -13,6 +13,7 @@ import {
   Clock,
   Sparkles,
   MessageSquare,
+  ExternalLink,
 } from "lucide-react";
 
 const formatRelativeTime = (dateString) => {
@@ -315,6 +316,18 @@ export default function NotificationCenter({ user, theme = "dark" }) {
             </div>
 
             <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOpen(false);
+                  navigate("/notifications");
+                }}
+                title="View all notifications"
+                className="flex items-center gap-1 text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:text-cyan-600 dark:hover:text-cyan-400 px-2 py-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              >
+                
+              </button>
+
               {unreadCount > 0 && (
                 <button
                   type="button"

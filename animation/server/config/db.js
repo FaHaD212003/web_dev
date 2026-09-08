@@ -15,10 +15,6 @@ const ensureUserColumns = async () => {
   await db.query(
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(255)",
   );
-  // Backfill username from email prefix for existing users
-  await db.query(
-    "UPDATE users SET username = split_part(email, '@', 1) WHERE username IS NULL OR username = ''",
-  );
 };
 
 const ensureTaskColumns = async () => {

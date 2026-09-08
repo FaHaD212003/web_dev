@@ -147,11 +147,10 @@ export default function TaskCard({
                 (task.assignee_id ? `User #${task.assignee_id}` : "Unassigned")
               }
             >
-              Assignee:{" "}
+              Assignee_id:{" "}
               <span className="font-semibold text-zinc-800 dark:text-zinc-200">
-                {task.assignee_username ||
-                  task.assignee_email ||
-                  (task.assignee_id ? `User #${task.assignee_id}` : "None")}
+                {
+                  (task.assignee_id ? `${task.assignee_id}` : "None")}
               </span>
             </span>
             <span
@@ -162,11 +161,10 @@ export default function TaskCard({
                 `User #${task.creator_id}`
               }
             >
-              Creator:{" "}
+              Creator_id:{" "}
               <span className="font-semibold text-zinc-800 dark:text-zinc-200">
-                {task.creator_username ||
-                  task.creator_email ||
-                  `User #${task.creator_id}`}
+                {
+                  `${task.creator_id}`}
               </span>
             </span>
           </div>

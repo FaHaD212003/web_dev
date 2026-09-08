@@ -492,10 +492,9 @@ export default function TaskDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-zinc-900 dark:text-white truncate">
-                    {task.assignee_username
-                      ? `${task.assignee_username} (${task.assignee_email || "User #" + task.assignee_id})`
+                     {task.assignee_email || "User #" + task.assignee_id}
                       : task.assignee_email ||
-                        `User #${task.assignee_id || "Unassigned"}`}
+                        `User #${task.assignee_id || "Unassigned"}
                   </p>
                   <span className="text-[11px] text-zinc-500 font-medium">
                     ID: {task.assignee_id || "None"}
@@ -512,9 +511,8 @@ export default function TaskDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-zinc-900 dark:text-white truncate">
-                    {task.creator_username
-                      ? `${task.creator_username} (${task.creator_email || "User #" + task.creator_id})`
-                      : task.creator_email || `User #${task.creator_id}`}
+                     {task.creator_email || "User #" + task.creator_id}
+                      : task.creator_email || `User #{task.creator_id}
                   </p>
                   <span className="text-[11px] text-zinc-500 font-medium">
                     ID: {task.creator_id}

@@ -10,10 +10,12 @@ export default function Sidebar({ role, onOpenCreateTask, theme = "dark" }) {
           { label: "Dashboard", to: "/dashboard" },
           { label: "Users", to: "/admin-users" },
           { label: "All Tasks", to: "/admin-tasks" },
+          { label: "Notifications", to: "/notifications" },
         ]
       : [
           { label: "My Tasks", to: "/my-tasks" },
-           { label: "Assigned Tasks", to: "/assigned-tasks" },
+          { label: "Assigned Tasks", to: "/assigned-tasks" },
+          { label: "Notifications", to: "/notifications" },
         ];
 
   return (

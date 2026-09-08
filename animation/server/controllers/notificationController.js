@@ -10,7 +10,7 @@ export const getUserNotifications = async (req, res) => {
          FROM notifications
          WHERE user_id = $1
          ORDER BY created_at DESC
-         LIMIT 50`,
+         LIMIT 100`,
         [userId],
       ),
       db.query(
@@ -39,10 +39,7 @@ export const markNotificationAsRead = async (req, res) => {
 
   try {
     const result = await db.query(
-      `UPDATE notifications
-       SET is_read = TRUE
-       WHERE id = $1 AND user_id = $2
-       RETURNING *`,
+      "UPDATE notifications SET is_read = TRUE WHERE id = $1 AND user_id = $2 RETURNING *",
       [id, userId],
     );
 
@@ -65,9 +62,7 @@ export const markAllNotificationsAsRead = async (req, res) => {
 
   try {
     await db.query(
-      `UPDATE notifications
-       SET is_read = TRUE
-       WHERE user_id = $1`,
+      "UPDATE notifications SET is_read = TRUE WHERE user_id = $1",
       [userId],
     );
 
@@ -104,7 +99,9 @@ export const clearAllNotifications = async (req, res) => {
 
   try {
     await db.query("DELETE FROM notifications WHERE user_id = $1", [userId]);
-    res.status(200).json({ message: "All notifications cleared successfully." });
+    res
+      .status(200)
+      .json({ message: "All notifications cleared successfully." });
   } catch (err) {
     console.error("Error clearing notifications:", err);
     res.status(500).json({ message: "Failed to clear notifications." });
