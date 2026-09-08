@@ -15,7 +15,17 @@ export const getAllTasks = async (req, res) => {
     const total = parseInt(countResult.rows[0]?.count || "0", 10);
 
     const result = await db.query(
-      "SELECT * FROM tasks ORDER BY created_at DESC NULLS LAST, id DESC LIMIT $1 OFFSET $2",
+      `SELECT 
+         t.*,
+         u_assignee.username AS assignee_username,
+         u_assignee.email AS assignee_email,
+         u_creator.username AS creator_username,
+         u_creator.email AS creator_email
+       FROM tasks t
+       LEFT JOIN users u_assignee ON t.assignee_id = u_assignee.id
+       LEFT JOIN users u_creator ON t.creator_id = u_creator.id
+       ORDER BY t.created_at DESC NULLS LAST, t.id DESC 
+       LIMIT $1 OFFSET $2`,
       [limit, offset],
     );
 
@@ -46,7 +56,18 @@ export const getMyTasks = async (req, res) => {
     const total = parseInt(countResult.rows[0]?.count || "0", 10);
 
     const result = await db.query(
-      "SELECT * FROM tasks WHERE assignee_id = $1 ORDER BY created_at DESC NULLS LAST, id DESC LIMIT $2 OFFSET $3",
+      `SELECT 
+         t.*,
+         u_assignee.username AS assignee_username,
+         u_assignee.email AS assignee_email,
+         u_creator.username AS creator_username,
+         u_creator.email AS creator_email
+       FROM tasks t
+       LEFT JOIN users u_assignee ON t.assignee_id = u_assignee.id
+       LEFT JOIN users u_creator ON t.creator_id = u_creator.id
+       WHERE t.assignee_id = $1 
+       ORDER BY t.created_at DESC NULLS LAST, t.id DESC 
+       LIMIT $2 OFFSET $3`,
       [userId, limit, offset],
     );
 
@@ -77,7 +98,18 @@ export const getAssignedTasks = async (req, res) => {
     const total = parseInt(countResult.rows[0]?.count || "0", 10);
 
     const result = await db.query(
-      "SELECT * FROM tasks WHERE creator_id = $1 AND assignee_id IS NOT NULL AND assignee_id <> $1 ORDER BY created_at DESC NULLS LAST, id DESC LIMIT $2 OFFSET $3",
+      `SELECT 
+         t.*,
+         u_assignee.username AS assignee_username,
+         u_assignee.email AS assignee_email,
+         u_creator.username AS creator_username,
+         u_creator.email AS creator_email
+       FROM tasks t
+       LEFT JOIN users u_assignee ON t.assignee_id = u_assignee.id
+       LEFT JOIN users u_creator ON t.creator_id = u_creator.id
+       WHERE t.creator_id = $1 AND t.assignee_id IS NOT NULL AND t.assignee_id <> $1 
+       ORDER BY t.created_at DESC NULLS LAST, t.id DESC 
+       LIMIT $2 OFFSET $3`,
       [userId, limit, offset],
     );
 
@@ -112,7 +144,23 @@ export const createTask = async (req, res) => {
       ],
     );
 
-    const newTask = result.rows[0];
+    const createdTask = result.rows[0];
+
+    const fullTaskResult = await db.query(
+      `SELECT 
+         t.*,
+         u_assignee.username AS assignee_username,
+         u_assignee.email AS assignee_email,
+         u_creator.username AS creator_username,
+         u_creator.email AS creator_email
+       FROM tasks t
+       LEFT JOIN users u_assignee ON t.assignee_id = u_assignee.id
+       LEFT JOIN users u_creator ON t.creator_id = u_creator.id
+       WHERE t.id = $1`,
+      [createdTask.id],
+    );
+
+    const newTask = fullTaskResult.rows[0];
     const io = req.app.get("io");
 
     // Send Real-Time Notifications to Admins and Assignee
@@ -158,7 +206,9 @@ export const getTaskById = async (req, res) => {
     const result = await db.query(
       `SELECT 
          t.*,
+         u_assignee.username AS assignee_username,
          u_assignee.email AS assignee_email,
+         u_creator.username AS creator_username,
          u_creator.email AS creator_email
        FROM tasks t
        LEFT JOIN users u_assignee ON t.assignee_id = u_assignee.id
@@ -205,6 +255,22 @@ export const updateTask = async (req, res) => {
     );
 
     const updatedTask = result.rows[0];
+
+    const fullTaskResult = await db.query(
+      `SELECT 
+         t.*,
+         u_assignee.username AS assignee_username,
+         u_assignee.email AS assignee_email,
+         u_creator.username AS creator_username,
+         u_creator.email AS creator_email
+       FROM tasks t
+       LEFT JOIN users u_assignee ON t.assignee_id = u_assignee.id
+       LEFT JOIN users u_creator ON t.creator_id = u_creator.id
+       WHERE t.id = $1`,
+      [updatedTask.id],
+    );
+
+    const finalTask = fullTaskResult.rows[0];
     const io = req.app.get("io");
 
     // Real-Time Notifications to Admins and Assignees (both previous and new if reassigned)
@@ -212,7 +278,7 @@ export const updateTask = async (req, res) => {
     const recipientIds = [
       ...adminIds,
       previousTask.assignee_id,
-      updatedTask.assignee_id,
+      finalTask.assignee_id,
     ].filter(Boolean);
 
     const statusLabel = (status || "").replace("_", " ");
@@ -222,7 +288,7 @@ export const updateTask = async (req, res) => {
 
     await createAndDispatchNotifications(io, {
       recipientUserIds: recipientIds,
-      taskId: updatedTask.id,
+      taskId: finalTask.id,
       title: "Task Updated",
       message: `Task "${title}" was updated (Status: ${statusLabel}).${formattedDue}`,
       type: "task_updated",
@@ -239,7 +305,7 @@ export const updateTask = async (req, res) => {
       }
     }
 
-    res.status(200).json(updatedTask);
+    res.status(200).json(finalTask);
   } catch (err) {
     console.error("Error updating task:", err);
     res.status(500).json({ message: "Failed to update task." });

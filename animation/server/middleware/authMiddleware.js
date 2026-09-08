@@ -20,9 +20,10 @@ export const verifyToken = (req, res, next) => {
       return res.status(403).json({ message: "Invalid or expired token." });
     }
 
-    db.query("SELECT id, email, role, is_revoked FROM users WHERE id = $1", [
-      decodedUser.id,
-    ])
+    db.query(
+      "SELECT id, username, email, role, is_revoked FROM users WHERE id = $1",
+      [decodedUser.id],
+    )
       .then((result) => {
         if (result.rows.length === 0) {
           return res.status(403).json({ message: "User no longer exists." });
@@ -38,6 +39,7 @@ export const verifyToken = (req, res, next) => {
 
         req.user = {
           id: currentUser.id,
+          username: currentUser.username,
           email: currentUser.email,
           role: currentUser.role,
         };

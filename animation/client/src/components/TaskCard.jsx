@@ -138,9 +138,37 @@ export default function TaskCard({
             </div>
           )}
 
-          <div className="flex justify-between items-center text-[11px] text-zinc-500 dark:text-zinc-400 font-medium mt-3">
-            <span>Assignee #{task.assignee_id || "None"}</span>
-            <span>Creator #{task.creator_id}</span>
+          <div className="flex justify-between items-center text-[11px] text-zinc-500 dark:text-zinc-400 font-medium mt-3 gap-2">
+            <span
+              className="truncate max-w-[48%]"
+              title={
+                task.assignee_username ||
+                task.assignee_email ||
+                (task.assignee_id ? `User #${task.assignee_id}` : "Unassigned")
+              }
+            >
+              Assignee:{" "}
+              <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                {task.assignee_username ||
+                  task.assignee_email ||
+                  (task.assignee_id ? `User #${task.assignee_id}` : "None")}
+              </span>
+            </span>
+            <span
+              className="truncate max-w-[48%] text-right"
+              title={
+                task.creator_username ||
+                task.creator_email ||
+                `User #${task.creator_id}`
+              }
+            >
+              Creator:{" "}
+              <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                {task.creator_username ||
+                  task.creator_email ||
+                  `User #${task.creator_id}`}
+              </span>
+            </span>
           </div>
 
           <div className="flex gap-2 mt-2 pt-3 border-t border-zinc-100 dark:border-zinc-800/60">

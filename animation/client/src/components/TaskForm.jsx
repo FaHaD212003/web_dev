@@ -133,7 +133,9 @@ export default function TaskForm({ isOpen, onClose, onSubmit, initialData }) {
               </option>
               {roster.map((employee) => (
                 <option key={employee.id} value={employee.id}>
-                  {employee.email}
+                  {employee.username
+                    ? `${employee.username} (${employee.email})`
+                    : employee.email}
                 </option>
               ))}
             </select>

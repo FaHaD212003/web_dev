@@ -21,9 +21,11 @@ passport.use(
         ]);
 
         if (result.rows.length === 0) {
+          const defaultUsername =
+            profile.displayName || profile.email.split("@")[0];
           const newUser = await db.query(
-            "INSERT INTO users (email, password, is_revoked) VALUES ($1, $2, FALSE) RETURNING *",
-            [profile.email, "google"],
+            "INSERT INTO users (username, email, password, is_revoked) VALUES ($1, $2, $3, FALSE) RETURNING *",
+            [defaultUsername, profile.email, "google"],
           );
           return cb(null, newUser.rows[0]);
         } else if (result.rows[0].is_revoked) {

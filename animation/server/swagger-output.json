@@ -55,6 +55,9 @@
             "schema": {
               "type": "object",
               "properties": {
+                "email": {
+                  "example": "any"
+                },
                 "username": {
                   "example": "any"
                 },
@@ -91,6 +94,9 @@
             "schema": {
               "type": "object",
               "properties": {
+                "email": {
+                  "example": "any"
+                },
                 "username": {
                   "example": "any"
                 },
@@ -107,6 +113,9 @@
         "responses": {
           "201": {
             "description": "Created"
+          },
+          "400": {
+            "description": "Bad Request"
           },
           "409": {
             "description": "Conflict"

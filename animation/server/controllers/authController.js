@@ -27,15 +27,16 @@ export const logoutUser = (req, res) => {
 
 export const loginUser = async (req, res) => {
   try {
-    const email = req.body.username;
+    const identifier = req.body.email || req.body.username;
     const password = req.body.password;
 
-    const result = await db.query("SELECT * FROM users WHERE email = $1", [
-      email,
-    ]);
+    const result = await db.query(
+      "SELECT * FROM users WHERE email = $1 OR username = $1",
+      [identifier],
+    );
 
     if (result.rows.length === 0) {
-      return res.status(401).json({ message: "Invalid email." });
+      return res.status(401).json({ message: "Invalid email or username." });
     }
 
     const user = result.rows[0];
@@ -53,7 +54,12 @@ export const loginUser = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
       process.env.JWT_SECRET,
       { expiresIn: "24h" },
     );
@@ -63,6 +69,7 @@ export const loginUser = async (req, res) => {
       token: token,
       user: {
         id: user.id,
+        username: user.username,
         email: user.email,
         role: user.role,
         is_revoked: user.is_revoked,
@@ -73,34 +80,65 @@ export const loginUser = async (req, res) => {
     return res.status(500).json({ message: "Internal server error." });
   }
 };
-export const registerUser = async (req, res) => {
-  const email = req.body.username;
-  const password = req.body.password;
 
+export const registerUser = async (req, res) => {
+  const email = req.body.email || req.body.username;
+  const username =
+    req.body.username && req.body.email
+      ? req.body.username.trim()
+      : req.body.username
+        ? req.body.username.split("@")[0]
+        : email
+          ? email.split("@")[0]
+          : "user";
+  const password = req.body.password;
   const role = req.body.role || "user";
 
+  if (!email) {
+    return res.status(400).json({ message: "Email is required." });
+  }
+
   try {
-    const checkResult = await db.query("SELECT * FROM users WHERE email = $1", [
+    // Check if email already exists
+    const emailCheck = await db.query("SELECT * FROM users WHERE email = $1", [
       email,
     ]);
 
-    if (checkResult.rows.length > 0) {
+    if (emailCheck.rows.length > 0) {
       return res
         .status(409)
-        .json({ message: "User already exists. Please log in." });
+        .json({ message: "An account with this email already exists." });
+    }
+
+    // Check if username already exists
+    if (username) {
+      const usernameCheck = await db.query(
+        "SELECT * FROM users WHERE username = $1",
+        [username],
+      );
+      if (usernameCheck.rows.length > 0) {
+        return res.status(409).json({
+          message: "This username is already taken. Please choose another.",
+        });
+      }
     }
 
     const hash = await bcrypt.hash(password, saltRounds);
 
     const result = await db.query(
-      "INSERT INTO users (email, password, role) VALUES ($1, $2, $3) RETURNING *",
-      [email, hash, role],
+      "INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4) RETURNING *",
+      [username, email, hash, role],
     );
 
     const user = result.rows[0];
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
       process.env.JWT_SECRET,
       { expiresIn: "24h" },
     );
@@ -110,6 +148,7 @@ export const registerUser = async (req, res) => {
       token: token,
       user: {
         id: user.id,
+        username: user.username,
         email: user.email,
         role: user.role,
         is_revoked: user.is_revoked,

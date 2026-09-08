@@ -3,7 +3,7 @@ import db from "../config/db.js";
 export const getEmployees = async (req, res) => {
   try {
     const result = await db.query(
-      "SELECT id, email, role, is_revoked FROM users WHERE role = 'user' ORDER BY email ASC",
+      "SELECT id, username, email, role, is_revoked FROM users WHERE role = 'user' ORDER BY username ASC, email ASC",
     );
     res.status(200).json(result.rows);
   } catch (err) {
@@ -91,7 +91,7 @@ export const searchUsers = async (req, res) => {
       `
         SELECT COUNT(*)
         FROM users
-        WHERE $1 = '' OR email ILIKE $1;
+        WHERE $1 = '' OR email ILIKE $1 OR username ILIKE $1;
       `,
       [`%${query}%`],
     );
@@ -99,10 +99,10 @@ export const searchUsers = async (req, res) => {
 
     const result = await db.query(
       `
-        SELECT id, email, role, is_revoked
+        SELECT id, username, email, role, is_revoked
         FROM users
-        WHERE $1 = '' OR email ILIKE $1
-        ORDER BY email ASC
+        WHERE $1 = '' OR email ILIKE $1 OR username ILIKE $1
+        ORDER BY username ASC, email ASC
         LIMIT $2 OFFSET $3;
       `,
       [`%${query}%`, limit, offset],
@@ -126,7 +126,7 @@ export const getUserDetail = async (req, res) => {
 
   try {
     const userResult = await db.query(
-      "SELECT id, email, role, is_revoked FROM users WHERE id = $1",
+      "SELECT id, username, email, role, is_revoked FROM users WHERE id = $1",
       [id],
     );
 

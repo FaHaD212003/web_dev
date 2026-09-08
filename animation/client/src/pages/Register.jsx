@@ -8,6 +8,7 @@ import Input from "../components/Input";
 import SubmitButton from "../components/SubmitButton";
 
 export default function Register() {
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -30,6 +31,10 @@ export default function Register() {
     e.preventDefault();
     setError("");
 
+    if (!username.trim()) {
+      return setError("Please enter a username.");
+    }
+
     if (password !== confirmPassword) {
       return setError("Passwords do not match. Please try again.");
     }
@@ -42,7 +47,8 @@ export default function Register() {
 
     try {
       const response = await axios.post("http://localhost:3000/register", {
-        username: email,
+        username: username.trim(),
+        email: email.trim(),
         password: password,
         role: role,
       });
@@ -55,8 +61,8 @@ export default function Register() {
         navigate("/home", { replace: true });
       }
     } catch (err) {
-      if (err.response && err.response.status === 409) {
-        setError("An account with this email already exists.");
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
       } else {
         setError("Server error. Please try again later.");
       }
@@ -88,7 +94,15 @@ export default function Register() {
 
           <form onSubmit={handleRegister} className="space-y-4">
             <Input
-              label={"email"}
+              label={"Username"}
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your username"
+              required
+            />
+            <Input
+              label={"Email"}
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}

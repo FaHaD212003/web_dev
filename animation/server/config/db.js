@@ -11,6 +11,16 @@ const db = new pg.Client({
   port: process.env.PG_PORT,
 });
 
+const ensureUserColumns = async () => {
+  await db.query(
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(255)",
+  );
+  // Backfill username from email prefix for existing users
+  await db.query(
+    "UPDATE users SET username = split_part(email, '@', 1) WHERE username IS NULL OR username = ''",
+  );
+};
+
 const ensureTaskColumns = async () => {
   await db.query(
     "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()",
@@ -75,6 +85,7 @@ db.connect()
   .then(async () => {
     console.log("Connected to PostgreSQL");
     try {
+      await ensureUserColumns();
       await ensureTaskColumns();
       await ensureCommentTable();
       await ensureNotificationTable();
