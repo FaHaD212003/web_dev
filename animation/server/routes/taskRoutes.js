@@ -1,6 +1,7 @@
 import express from "express";
 import {
   getAllTasks,
+  getCalendarTasks,
   getMyTasks,
   getAssignedTasks,
   getTaskById,
@@ -12,6 +13,7 @@ import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+router.get("/calendar", verifyToken, getCalendarTasks);
 router.get("/my-tasks", verifyToken, getMyTasks);
 router.get("/assigned-tasks", verifyToken, getAssignedTasks);
 router.get("/task-detail/:id", verifyToken, getTaskById);

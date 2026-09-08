@@ -72,6 +72,7 @@ export const loginUser = async (req, res) => {
         username: user.username,
         email: user.email,
         role: user.role,
+        is_google_user: !!user.is_google_user,
         is_revoked: user.is_revoked,
       },
     });
@@ -126,7 +127,7 @@ export const registerUser = async (req, res) => {
     const hash = await bcrypt.hash(password, saltRounds);
 
     const result = await db.query(
-      "INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4) RETURNING *",
+      "INSERT INTO users (username, email, password, role, is_google_user) VALUES ($1, $2, $3, $4, FALSE) RETURNING *",
       [username, email, hash, role],
     );
 
@@ -151,6 +152,7 @@ export const registerUser = async (req, res) => {
         username: user.username,
         email: user.email,
         role: user.role,
+        is_google_user: !!user.is_google_user,
         is_revoked: user.is_revoked,
       },
     });
@@ -248,5 +250,134 @@ export const resetPassword = async (req, res) => {
     return res
       .status(400)
       .json({ message: "Password reset token is invalid or has expired." });
+  }
+};
+
+export const sendGoogleVerificationEmail = async (req, res) => {
+  const userId = req.user.id;
+  const userEmail = req.user.email;
+
+  try {
+    const userResult = await db.query("SELECT * FROM users WHERE id = $1", [
+      userId,
+    ]);
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const user = userResult.rows[0];
+
+    if (user.is_google_user) {
+      return res.status(200).json({
+        message: "Your account is already verified as a Google user.",
+        is_google_user: true,
+      });
+    }
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, purpose: "google_verify" },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" },
+    );
+
+    const transporter = nodemailer.createTransport({
+      service: "Gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const verifyURL = `http://localhost:5173/verify-google?token=${token}`;
+
+    const mailOptions = {
+      to: userEmail,
+      from: process.env.EMAIL_USER,
+      subject: "Verify Google Account for Regulate Calendar Sync",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 540px; margin: 0 auto; padding: 24px; border: 1px solid #e4e4e7; border-radius: 16px; background-color: #ffffff; color: #18181b;">
+          <div style="display: flex; align-items: center; margin-bottom: 20px;">
+            <div style="background-color: #2563eb; color: #ffffff; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; margin-right: 12px; text-align: center; line-height: 36px;">R</div>
+            <h2 style="margin: 0; font-size: 20px; font-weight: 800; color: #09090b;">Regulate Calendar Sync</h2>
+          </div>
+          <p style="font-size: 14px; line-height: 1.6; color: #3f3f46;">
+            Hello <strong>${user.username || user.email}</strong>,
+          </p>
+          <p style="font-size: 14px; line-height: 1.6; color: #3f3f46;">
+            You requested to verify your Google Account to enable seamless synchronization with <strong>Google Calendar</strong> for your tasks.
+          </p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verifyURL}" style="display: inline-block; background-color: #09090b; color: #ffffff; padding: 12px 28px; font-size: 14px; font-weight: 700; text-decoration: none; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+              Verify Google Account
+            </a>
+          </div>
+          <p style="font-size: 12px; line-height: 1.5; color: #71717a;">
+            Or copy and paste this link into your browser:<br />
+            <a href="${verifyURL}" style="color: #2563eb; word-break: break-all;">${verifyURL}</a>
+          </p>
+          <hr style="border: none; border-top: 1px solid #f4f4f5; margin: 24px 0;" />
+          <p style="font-size: 11px; color: #a1a1aa; text-align: center; margin: 0;">
+            If you did not request this verification, you can safely ignore this email.
+          </p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+    return res.status(200).json({
+      message: "Verification email sent successfully. Please check your inbox.",
+    });
+  } catch (err) {
+    console.error("Send Google verification email error:", err);
+    return res
+      .status(500)
+      .json({ message: "Failed to send verification email." });
+  }
+};
+
+export const verifyGoogleUser = async (req, res) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return res.status(400).json({ message: "Verification token is required." });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (decoded.purpose !== "google_verify") {
+      return res
+        .status(400)
+        .json({ message: "Invalid verification token purpose." });
+    }
+
+    const result = await db.query(
+      "UPDATE users SET is_google_user = TRUE WHERE id = $1 RETURNING id, username, email, role, is_google_user",
+      [decoded.id],
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const updatedUser = result.rows[0];
+
+    return res.status(200).json({
+      message:
+        "Google account verified successfully! Google Calendar sync is now enabled.",
+      user: {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        is_google_user: true,
+      },
+    });
+  } catch (err) {
+    console.error("Verify Google token error:", err);
+    return res
+      .status(400)
+      .json({ message: "Verification token is invalid or has expired." });
   }
 };

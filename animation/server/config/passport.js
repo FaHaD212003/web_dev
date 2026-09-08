@@ -24,13 +24,21 @@ passport.use(
           const defaultUsername =
             profile.displayName || profile.email.split("@")[0];
           const newUser = await db.query(
-            "INSERT INTO users (username, email, password, is_revoked) VALUES ($1, $2, $3, FALSE) RETURNING *",
+            "INSERT INTO users (username, email, password, is_revoked, is_google_user) VALUES ($1, $2, $3, FALSE, TRUE) RETURNING *",
             [defaultUsername, profile.email, "google"],
           );
           return cb(null, newUser.rows[0]);
         } else if (result.rows[0].is_revoked) {
           return cb(new Error("Your account has been revoked."));
         } else {
+          // If existing user logs in with Google, ensure is_google_user is TRUE
+          if (!result.rows[0].is_google_user) {
+            await db.query(
+              "UPDATE users SET is_google_user = TRUE WHERE id = $1",
+              [result.rows[0].id],
+            );
+            result.rows[0].is_google_user = true;
+          }
           return cb(null, result.rows[0]);
         }
       } catch (err) {

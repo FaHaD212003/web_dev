@@ -7,6 +7,8 @@ import {
   registerUser,
   forgotPassword,
   resetPassword,
+  sendGoogleVerificationEmail,
+  verifyGoogleUser,
 } from "../controllers/authController.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 
@@ -19,6 +21,15 @@ router.post("/logout", logoutUser);
 
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);
+
+router.post("/send-google-verify", verifyToken, sendGoogleVerificationEmail);
+router.post(
+  "/auth/send-google-verify",
+  verifyToken,
+  sendGoogleVerificationEmail,
+);
+router.post("/verify-google-token", verifyGoogleUser);
+router.post("/auth/verify-google-token", verifyGoogleUser);
 
 router.get(
   "/auth/google",

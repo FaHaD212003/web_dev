@@ -42,6 +42,45 @@ export const getAllTasks = async (req, res) => {
   }
 };
 
+export const getCalendarTasks = async (req, res) => {
+  const currentUserId = req.user.id;
+  const isAdmin = req.user.role === "admin";
+  const filterUserId = req.query.userId ? parseInt(req.query.userId, 10) : null;
+
+  try {
+    let query = `
+      SELECT 
+        t.*,
+        u_assignee.username AS assignee_username,
+        u_assignee.email AS assignee_email,
+        u_creator.username AS creator_username,
+        u_creator.email AS creator_email
+      FROM tasks t
+      LEFT JOIN users u_assignee ON t.assignee_id = u_assignee.id
+      LEFT JOIN users u_creator ON t.creator_id = u_creator.id
+    `;
+    const params = [];
+
+    if (isAdmin) {
+      if (filterUserId && !isNaN(filterUserId)) {
+        query += " WHERE (t.assignee_id = $1 OR t.creator_id = $1)";
+        params.push(filterUserId);
+      }
+    } else {
+      query += " WHERE (t.assignee_id = $1 OR t.creator_id = $1)";
+      params.push(currentUserId);
+    }
+
+    query += " ORDER BY t.due_date ASC NULLS LAST, t.created_at DESC";
+
+    const result = await db.query(query, params);
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error("Error fetching calendar tasks:", err);
+    res.status(500).json({ message: "Failed to fetch calendar tasks." });
+  }
+};
+
 export const getMyTasks = async (req, res) => {
   const userId = req.user.id;
   const page = Math.max(1, parseInt(req.query.page) || 1);

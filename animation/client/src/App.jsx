@@ -21,6 +21,8 @@ import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminUserDetail from "./pages/AdminUserDetail";
 import TaskDetailPage from "./pages/TaskDetailPage";
 import NotificationsPage from "./pages/NotificationsPage";
+import CalendarPage from "./pages/CalendarPage";
+import VerifyGooglePage from "./pages/VerifyGooglePage";
 
 function ProtectedRoute() {
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
@@ -59,10 +61,12 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/verify-google" element={<VerifyGooglePage />} />
 
         {/* Protected Routes wrapped in Layout */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<AdminDashboard />} />
+          <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/admin-users" element={<AdminUsersPage />} />
           <Route path="/admin-users/:id" element={<AdminUserDetail />} />
           <Route path="/admin-tasks" element={<AdminView />} />

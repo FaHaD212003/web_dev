@@ -21,7 +21,7 @@ export const verifyToken = (req, res, next) => {
     }
 
     db.query(
-      "SELECT id, username, email, role, is_revoked FROM users WHERE id = $1",
+      "SELECT id, username, email, role, is_revoked, is_google_user FROM users WHERE id = $1",
       [decodedUser.id],
     )
       .then((result) => {
@@ -42,6 +42,7 @@ export const verifyToken = (req, res, next) => {
           username: currentUser.username,
           email: currentUser.email,
           role: currentUser.role,
+          is_google_user: !!currentUser.is_google_user,
         };
         next();
       })

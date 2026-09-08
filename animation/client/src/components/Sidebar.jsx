@@ -8,11 +8,13 @@ export default function Sidebar({ role, onOpenCreateTask, theme = "dark" }) {
     role === "admin"
       ? [
           { label: "Dashboard", to: "/dashboard" },
+          { label: "Calendar", to: "/calendar" },
           { label: "Users", to: "/admin-users" },
           { label: "All Tasks", to: "/admin-tasks" },
           { label: "Notifications", to: "/notifications" },
         ]
       : [
+          { label: "Calendar", to: "/calendar" },
           { label: "My Tasks", to: "/my-tasks" },
           { label: "Assigned Tasks", to: "/assigned-tasks" },
           { label: "Notifications", to: "/notifications" },
