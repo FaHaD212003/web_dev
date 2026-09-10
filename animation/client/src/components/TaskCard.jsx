@@ -77,14 +77,14 @@ export default function TaskCard({
       }}
       onDragEnd={onDragEnd}
       onClick={handleCardClick}
-      className="bg-white dark:bg-[#08080A] rounded-2xl shadow-sm dark:shadow-xl flex flex-col gap-3 border border-zinc-200 dark:border-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all cursor-pointer group"
+      className="bg-white dark:bg-[#08080A] rounded-2xl shadow-sm  dark:shadow-xl flex flex-col gap-3  dark:border-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all cursor-pointer group"
     >
       <BorderGlow
         edgeSensitivity={30}
         glowColor={isLight ? "210 80 60" : "40 80 80"}
         backgroundColor={cardBg}
         borderRadius={28}
-        glowRadius={45}
+        glowRadius={55}
         glowIntensity={isLight ? 0.8 : 1}
         coneSpread={35}
         animated={false}
