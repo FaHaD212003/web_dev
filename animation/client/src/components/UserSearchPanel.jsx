@@ -70,14 +70,14 @@ export default function UserSearchPanel({
     [],
   );
 
-  // Debounced search query change -> Resets to Page 1
+ 
   useEffect(() => {
     let isActive = true;
     const timer = setTimeout(() => {
       if (isActive) {
         fetchUsers(query, 1, true);
       }
-    }, 250);
+    }, 500);
 
     return () => {
       isActive = false;
@@ -85,7 +85,7 @@ export default function UserSearchPanel({
     };
   }, [query, fetchUsers]);
 
-  // Infinite Scroll IntersectionObserver
+
   useEffect(() => {
     if (!hasMore || isLoadingInitial || isLoadingMore) return;
 

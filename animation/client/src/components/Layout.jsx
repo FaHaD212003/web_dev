@@ -20,8 +20,10 @@ export default function Layout({ user }) {
     const root = document.documentElement;
     if (theme === "dark") {
       root.classList.add("dark");
+      root.setAttribute("data-color-scheme","dark");
     } else {
       root.classList.remove("dark");
+      root.setAttribute("data-color-scheme","light")
     }
     localStorage.setItem("theme", theme);
   }, [theme]);

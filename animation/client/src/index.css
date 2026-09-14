@@ -4,3 +4,30 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.dark,
+.dark .fc,
+[data-color-scheme="dark"] {
+  /* Neutral Backgrounds */
+  --fc-classic-background: #18181b; /* Dark zinc-900 */
+  --fc-classic-faint: rgba(255, 255, 255, 0.04);
+  --fc-classic-muted: rgba(255, 255, 255, 0.08);
+  --fc-classic-strong: rgba(255, 255, 255, 0.15);
+  /* Foreground / Text */
+  --fc-classic-foreground: #ffffff; /* White text for day numbers & titles */
+  --fc-classic-faint-foreground: #71717a; /* Muted gray */
+  --fc-classic-muted-foreground: #a1a1aa; /* Light gray for headers */
+  /* Borders */
+  --fc-classic-border: #27272a; /* Dark border lines */
+  --fc-classic-strong-border: #3f3f46;
+  /* Buttons */
+  --fc-classic-button: #27272a;
+  --fc-classic-button-border: #3f3f46;
+  --fc-classic-button-strong: #3b82f6; /* Blue for active view */
+  --fc-classic-button-strong-border: #2563eb;
+  --fc-classic-button-foreground: #ffffff;
+  --fc-classic-button-outline: rgba(59, 130, 246, 0.5);
+  /* Highlights & Today */
+  --fc-classic-highlight: rgba(59, 130, 246, 0.2);
+  --fc-classic-today: rgba(59, 130, 246, 0.15); /* Subtle blue glow for today */
+}
