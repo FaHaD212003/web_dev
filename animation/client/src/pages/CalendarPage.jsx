@@ -40,7 +40,7 @@ export default function Calendar() {
   const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
 
-  // 1. Detect return from Google OAuth redirect
+  
   useEffect(() => {
     const googleConnected = searchParams.get("google_connected");
     const token = searchParams.get("token");
@@ -64,7 +64,7 @@ export default function Calendar() {
     }
   }, [searchParams, dispatch, navigate]);
 
-  // 2. Fetch Tasks for Calendar
+ 
   const fetchTasks = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -87,7 +87,7 @@ export default function Calendar() {
     fetchTasks();
   }, [fetchTasks]);
 
-  // 3. Fetch Users for Admin Dropdown
+
   useEffect(() => {
     if (!isAdmin) return;
 
@@ -106,12 +106,12 @@ export default function Calendar() {
     fetchUsers();
   }, [isAdmin]);
 
-  // 4. Initiate Google OAuth Authorization
+  
   const handleConnectGoogle = () => {
     window.location.href = "http://localhost:3000/auth/google";
   };
 
-  // 5. Sync Tasks from Google Tasks API
+ 
   const handleSyncGoogleTasks = async () => {
     try {
       setIsSyncing(true);
