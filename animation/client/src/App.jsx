@@ -6,7 +6,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { initializeAuth } from "./store/authSlice";
+import { initializeAuth, loginSuccess } from "./store/authSlice";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Home from "./pages/Home";
@@ -25,11 +25,29 @@ import CalendarPage from "./pages/CalendarPage";
 import VerifyGooglePage from "./pages/VerifyGooglePage";
 
 function ProtectedRoute() {
+  const dispatch = useDispatch();
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const reduxUser = useSelector((state) => state.auth.user);
 
+  // Check if returning from Google OAuth redirect with tokens in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const queryToken = urlParams.get("token");
+  const queryUser = urlParams.get("user");
+
+  if (queryToken && queryUser) {
+    try {
+      const parsedUser = JSON.parse(decodeURIComponent(queryUser));
+      localStorage.setItem("token", queryToken);
+      localStorage.setItem("user", JSON.stringify(parsedUser));
+      dispatch(loginSuccess(parsedUser));
+      return <Layout user={parsedUser} />;
+    } catch (e) {
+      console.error("Failed to parse OAuth user from URL:", e);
+    }
+  }
+
   const token = localStorage.getItem("token");
-  const localUser = JSON.parse(localStorage.getItem("user"));
+  const localUser = JSON.parse(localStorage.getItem("user") || "null");
 
   const isAuth = isAuthenticated || !!token;
   const user = reduxUser || localUser;

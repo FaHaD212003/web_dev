@@ -31,20 +31,57 @@ router.post(
 router.post("/verify-google-token", verifyGoogleUser);
 router.post("/auth/verify-google-token", verifyGoogleUser);
 
+import jwt from "jsonwebtoken";
+
 router.get(
-  "/auth/google",
+  ["/google", "/auth/google"],
   passport.authenticate("google", {
-    scope: ["profile", "email"],
+    scope: [
+      "profile",
+      "email",
+      "https://www.googleapis.com/auth/tasks.readonly",
+      "https://www.googleapis.com/auth/tasks",
+    ],
+    accessType: "offline",
+    prompt: "consent",
+    session: false,
   }),
 );
 
 router.get(
-  "/auth/google/home",
+  ["/google/home", "/auth/google/home"],
   passport.authenticate("google", {
-    failureRedirect: "http://localhost:5173/login",
+    failureRedirect: "http://localhost:5173/login?error=google_auth_failed",
+    session: false,
   }),
   (req, res) => {
-    res.redirect("http://localhost:5173/home");
+    const user = req.user;
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        username: user.username,
+        is_google_user: true,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" },
+    );
+
+    const userData = encodeURIComponent(
+      JSON.stringify({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        is_google_user: true,
+        is_revoked: user.is_revoked,
+      }),
+    );
+
+    res.redirect(
+      `http://localhost:5173/calendar?token=${token}&user=${userData}&google_connected=true`,
+    );
   },
 );
 

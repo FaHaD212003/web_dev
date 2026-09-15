@@ -24,22 +24,29 @@ passport.use(
           const defaultUsername =
             profile.displayName || profile.email.split("@")[0];
           const newUser = await db.query(
-            "INSERT INTO users (username, email, password, is_revoked, is_google_user) VALUES ($1, $2, $3, FALSE, TRUE) RETURNING *",
-            [defaultUsername, profile.email, "google"],
+            "INSERT INTO users (username, email, password, is_revoked, is_google_user, google_access_token, google_refresh_token) VALUES ($1, $2, $3, FALSE, TRUE, $4, $5) RETURNING *",
+            [
+              defaultUsername,
+              profile.email,
+              "google",
+              accessToken,
+              refreshToken || null,
+            ],
           );
           return cb(null, newUser.rows[0]);
         } else if (result.rows[0].is_revoked) {
           return cb(new Error("Your account has been revoked."));
         } else {
-          // If existing user logs in with Google, ensure is_google_user is TRUE
-          if (!result.rows[0].is_google_user) {
-            await db.query(
-              "UPDATE users SET is_google_user = TRUE WHERE id = $1",
-              [result.rows[0].id],
-            );
-            result.rows[0].is_google_user = true;
-          }
-          return cb(null, result.rows[0]);
+          // If existing user logs in/connects with Google, update tokens & ensure is_google_user is TRUE
+          const updatedUser = await db.query(
+            `UPDATE users 
+             SET is_google_user = TRUE, 
+                 google_access_token = $1, 
+                 google_refresh_token = COALESCE($2, google_refresh_token)
+             WHERE id = $3 RETURNING *`,
+            [accessToken, refreshToken || null, result.rows[0].id],
+          );
+          return cb(null, updatedUser.rows[0]);
         }
       } catch (err) {
         console.error("Google Auth Error:", err);

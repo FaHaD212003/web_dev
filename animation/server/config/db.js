@@ -15,6 +15,15 @@ const ensureUserColumns = async () => {
   await db.query(
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(255)",
   );
+  await db.query(
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS google_access_token TEXT",
+  );
+  await db.query(
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS google_refresh_token TEXT",
+  );
+  await db.query(
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS google_token_expires_at TIMESTAMPTZ",
+  );
 };
 
 const ensureTaskColumns = async () => {

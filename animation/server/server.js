@@ -89,6 +89,7 @@ const swaggerDocument = JSON.parse(
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use(express.static("public"));
+app.use(passport.initialize());
 app.use("/", authRoutes);
 app.use("/tasks", taskRoutes);
 app.use("/tasks", commentRoutes);
