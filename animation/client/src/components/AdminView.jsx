@@ -3,6 +3,7 @@ import { useOutletContext } from "react-router-dom";
 import axios from "axios";
 import TaskCard from "./TaskCard";
 import TaskForm from "./TaskForm";
+import { API_BASE_URL } from "../config/api";
 
 export default function AdminView() {
   const [tasks, setTasks] = useState([]);
@@ -39,7 +40,7 @@ export default function AdminView() {
       }
 
       const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:3000/tasks", {
+      const response = await axios.get(`${API_BASE_URL}/tasks`, {
         params: { page: pageNumber, limit: 12 },
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -65,7 +66,7 @@ export default function AdminView() {
       setTotalTasks(serverTotal);
       setError("");
     } catch (err) {
-      setError("Failed to load system tasks.");
+      setError("Failed to load tasks.");
     } finally {
       if (isReset) {
         setIsLoadingInitial(false);
@@ -79,17 +80,25 @@ export default function AdminView() {
     fetchTasks(1, true);
   }, [fetchTasks]);
 
-  // Infinite Scroll IntersectionObserver
   useEffect(() => {
-    if (!hasMore || isLoadingInitial || isLoadingMore) return;
-
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
-          fetchTasks(page + 1, false);
+        const first = entries[0];
+        if (
+          first &&
+          first.isIntersecting &&
+          hasMore &&
+          !isLoadingInitial &&
+          !isLoadingMore
+        ) {
+          setPage((prevPage) => {
+            const nextPage = prevPage + 1;
+            fetchTasks(nextPage, false);
+            return nextPage;
+          });
         }
       },
-      { threshold: 0.1, rootMargin: "200px" },
+      { threshold: 0.1 },
     );
 
     const currentSentinel = sentinelRef.current;
@@ -107,7 +116,7 @@ export default function AdminView() {
   const handleDelete = async (taskId) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:3000/tasks/${taskId}`, {
+      await axios.delete(`${API_BASE_URL}/tasks/${taskId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTasks((prev) => prev.filter((task) => task.id !== taskId));
@@ -122,7 +131,7 @@ export default function AdminView() {
       const token = localStorage.getItem("token");
       if (editingTask) {
         const response = await axios.put(
-          `http://localhost:3000/tasks/${editingTask.id}`,
+          `${API_BASE_URL}/tasks/${editingTask.id}`,
           taskData,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -132,7 +141,7 @@ export default function AdminView() {
           prev.map((t) => (t.id === editingTask.id ? response.data : t)),
         );
       } else {
-        await axios.post("http://localhost:3000/tasks", taskData, {
+        await axios.post(`${API_BASE_URL}/tasks`, taskData, {
           headers: { Authorization: `Bearer ${token}` },
         });
         fetchTasks(1, true);
@@ -152,7 +161,7 @@ export default function AdminView() {
   const updateTaskStatus = async (task, status) => {
     const token = localStorage.getItem("token");
     const response = await axios.put(
-      `http://localhost:3000/tasks/${task.id}`,
+      `${API_BASE_URL}/tasks/${task.id}`,
       {
         title: task.title,
         description: task.description,

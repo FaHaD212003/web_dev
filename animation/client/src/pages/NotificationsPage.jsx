@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import { io } from "socket.io-client";
+import { API_BASE_URL } from "../config/api";
 import {
   Bell,
   CheckCheck,
@@ -104,7 +105,7 @@ export default function NotificationsPage() {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await axios.get("http://localhost:3000/notifications", {
+      const response = await axios.get(`${API_BASE_URL}/notifications`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -125,7 +126,7 @@ export default function NotificationsPage() {
   useEffect(() => {
     if (!currentUser?.id) return;
 
-    const socket = io("http://localhost:3000", {
+    const socket = io(API_BASE_URL, {
       transports: ["websocket", "polling"],
     });
 
@@ -155,7 +156,7 @@ export default function NotificationsPage() {
     try {
       const token = localStorage.getItem("token");
       await axios.patch(
-        "http://localhost:3000/notifications/mark-all-read",
+        `${API_BASE_URL}/notifications/mark-all-read`,
         {},
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -175,7 +176,7 @@ export default function NotificationsPage() {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.delete("http://localhost:3000/notifications/clear-all", {
+      await axios.delete(`${API_BASE_URL}/notifications/clear-all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -191,7 +192,7 @@ export default function NotificationsPage() {
       try {
         const token = localStorage.getItem("token");
         await axios.patch(
-          `http://localhost:3000/notifications/${notif.id}/read`,
+          `${API_BASE_URL}/notifications/${notif.id}/read`,
           {},
           { headers: { Authorization: `Bearer ${token}` } },
         );
@@ -214,7 +215,7 @@ export default function NotificationsPage() {
     e.stopPropagation();
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:3000/notifications/${notifId}`, {
+      await axios.delete(`${API_BASE_URL}/notifications/${notifId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

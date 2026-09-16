@@ -6,6 +6,7 @@ import { loginSuccess, logoutSuccess } from "../store/authSlice";
 import TargetCursor from "../components/TargetCursor";
 import AdminView from "../components/AdminView";
 import UserView from "../components/UserView";
+import { API_BASE_URL } from "../config/api";
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
@@ -27,7 +28,7 @@ export default function Home() {
       }
 
       try {
-        const response = await axios.get("http://localhost:3000/home", {
+        const response = await axios.get(`${API_BASE_URL}/home`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

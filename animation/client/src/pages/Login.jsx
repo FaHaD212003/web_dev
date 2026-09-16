@@ -6,8 +6,9 @@ import { useSelector, useDispatch } from "react-redux";
 import { loginSuccess } from "../store/authSlice";
 import Input from "../components/Input";
 import SubmitButton from "../components/SubmitButton";
+import { API_BASE_URL } from "../config/api";
 
-export default function Login() { 
+export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -16,7 +17,7 @@ export default function Login() {
 
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
 
-useEffect(() => {
+  useEffect(() => {
     let isMounted = true;
 
     const restoreSession = async () => {
@@ -26,16 +27,22 @@ useEffect(() => {
       if (!token || !savedUser) return;
 
       try {
-        const response = await axios.get("http://localhost:3000/home", {
+        const response = await axios.get(`${API_BASE_URL}/home`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (response.status === 200 && response.data.authenticated && isMounted) {
+        if (
+          response.status === 200 &&
+          response.data.authenticated &&
+          isMounted
+        ) {
           const user = response.data.user || JSON.parse(savedUser);
           localStorage.setItem("user", JSON.stringify(user));
           dispatch(loginSuccess(user));
           // Route dynamically based on role
-          navigate(user.role === "admin" ? "/dashboard" : "/my-tasks", { replace: true });
+          navigate(user.role === "admin" ? "/dashboard" : "/my-tasks", {
+            replace: true,
+          });
         }
       } catch (err) {
         localStorage.removeItem("token");
@@ -44,10 +51,11 @@ useEffect(() => {
     };
 
     if (isAuthenticated) {
-      
       const savedUser = JSON.parse(localStorage.getItem("user"));
       if (savedUser) {
-        navigate(savedUser.role === "admin" ? "/dashboard" : "/my-tasks", { replace: true });
+        navigate(savedUser.role === "admin" ? "/dashboard" : "/my-tasks", {
+          replace: true,
+        });
       }
       return () => {
         isMounted = false;
@@ -60,12 +68,12 @@ useEffect(() => {
       isMounted = false;
     };
   }, [isAuthenticated, navigate, dispatch]);
-  
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
     try {
-      const response = await axios.post("http://localhost:3000/login", {
+      const response = await axios.post(`${API_BASE_URL}/login`, {
         username: email,
         password: password,
       });
@@ -84,15 +92,14 @@ useEffect(() => {
         setError("Invalid email or password. Please try again.");
       } else if (err.response && err.response.status === 403) {
         setError("Your account has been revoked. Please contact support.");
-      }
-      else {
+      } else {
         setError("Server error. Please try again later.");
       }
     }
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = "http://localhost:3000/auth/google";
+    window.location.href = `${API_BASE_URL}/auth/google`;
   };
 
   return (
@@ -121,7 +128,7 @@ useEffect(() => {
               placeholder="Enter your email"
               required
             />
-            
+
             <Input
               label={"password"}
               type="password"

@@ -3,6 +3,7 @@ import { useLocation, useOutletContext } from "react-router-dom";
 import axios from "axios";
 import TaskCard from "./TaskCard";
 import TaskForm from "./TaskForm";
+import { API_BASE_URL } from "../config/api";
 
 export default function UserView() {
   const [tasks, setTasks] = useState([]);
@@ -39,8 +40,8 @@ export default function UserView() {
       ? "Failed to load tasks you assigned."
       : "Failed to load your tasks.",
     endpoint: isAssignedTasksPage
-      ? "http://localhost:3000/tasks/assigned-tasks"
-      : "http://localhost:3000/tasks/my-tasks",
+      ? `${API_BASE_URL}/tasks/assigned-tasks`
+      : `${API_BASE_URL}/tasks/my-tasks`,
   };
 
   useEffect(() => {
@@ -133,7 +134,7 @@ export default function UserView() {
   const handleDelete = async (taskId) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:3000/tasks/${taskId}`, {
+      await axios.delete(`${API_BASE_URL}/tasks/${taskId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTasks((currentTasks) =>
@@ -150,7 +151,7 @@ export default function UserView() {
       const token = localStorage.getItem("token");
       if (editingTask) {
         const response = await axios.put(
-          `http://localhost:3000/tasks/${editingTask.id}`,
+          `${API_BASE_URL}/tasks/${editingTask.id}`,
           taskData,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -160,7 +161,7 @@ export default function UserView() {
           prev.map((t) => (t.id === editingTask.id ? response.data : t)),
         );
       } else {
-        await axios.post("http://localhost:3000/tasks", taskData, {
+        await axios.post(`${API_BASE_URL}/tasks`, taskData, {
           headers: { Authorization: `Bearer ${token}` },
         });
         fetchTasks(1, true);
@@ -180,7 +181,7 @@ export default function UserView() {
   const updateTaskStatus = async (task, status) => {
     const token = localStorage.getItem("token");
     const response = await axios.put(
-      `http://localhost:3000/tasks/${task.id}`,
+      `${API_BASE_URL}/tasks/${task.id}`,
       {
         title: task.title,
         description: task.description,

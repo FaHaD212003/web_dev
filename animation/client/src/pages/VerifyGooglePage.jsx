@@ -3,7 +3,14 @@ import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import axios from "axios";
 import { updateUser } from "../store/authSlice";
-import { CheckCircle2, XCircle, Loader2, Calendar, ArrowRight } from "lucide-react";
+import {
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  Calendar,
+  ArrowRight,
+} from "lucide-react";
+import { API_BASE_URL } from "../config/api";
 
 export default function VerifyGooglePage() {
   const [searchParams] = useSearchParams();
@@ -26,13 +33,15 @@ export default function VerifyGooglePage() {
     const verifyToken = async () => {
       try {
         const response = await axios.post(
-          "http://localhost:3000/auth/verify-google-token",
-          { token }
+          `${API_BASE_URL}/auth/verify-google-token`,
+          { token },
         );
 
         if (isMounted) {
           setStatus("success");
-          setMessage(response.data.message || "Google account verified successfully!");
+          setMessage(
+            response.data.message || "Google account verified successfully!",
+          );
           if (response.data.user) {
             dispatch(updateUser(response.data.user));
           }
@@ -42,7 +51,7 @@ export default function VerifyGooglePage() {
           setStatus("error");
           setMessage(
             err.response?.data?.message ||
-              "Verification link is invalid or has expired. Please try requesting a new link from the Calendar page."
+              "Verification link is invalid or has expired. Please try requesting a new link from the Calendar page.",
           );
         }
       }
@@ -65,7 +74,9 @@ export default function VerifyGooglePage() {
         {status === "verifying" && (
           <div className="flex flex-col items-center py-8">
             <Loader2 className="h-12 w-12 text-blue-500 animate-spin mb-4" />
-            <h2 className="text-xl font-black text-white">Verifying Account...</h2>
+            <h2 className="text-xl font-black text-white">
+              Verifying Account...
+            </h2>
             <p className="text-xs text-zinc-400 mt-2">
               Please wait while we confirm your Google account verification.
             </p>
@@ -81,7 +92,8 @@ export default function VerifyGooglePage() {
               Google Account Verified!
             </h2>
             <p className="text-xs text-zinc-400 mt-2 leading-relaxed max-w-sm">
-              {message} You can now sync, manage, and view your tasks seamlessly in Google Calendar format.
+              {message} You can now sync, manage, and view your tasks seamlessly
+              in Google Calendar format.
             </p>
 
             <button

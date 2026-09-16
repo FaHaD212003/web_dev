@@ -50,12 +50,17 @@ router.get(
 
 router.get(
   ["/google/home", "/auth/google/home"],
-  passport.authenticate("google", {
-    failureRedirect: "http://localhost:5173/login?error=google_auth_failed",
-    session: false,
-  }),
+  (req, res, next) => {
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+    passport.authenticate("google", {
+      failureRedirect: `${clientUrl}/login?error=google_auth_failed`,
+      session: false,
+    })(req, res, next);
+  },
   (req, res) => {
     const user = req.user;
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+
     const token = jwt.sign(
       {
         id: user.id,
@@ -80,7 +85,7 @@ router.get(
     );
 
     res.redirect(
-      `http://localhost:5173/calendar?token=${token}&user=${userData}&google_connected=true`,
+      `${clientUrl}/calendar?token=${token}&user=${userData}&google_connected=true`,
     );
   },
 );

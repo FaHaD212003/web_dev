@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import { io } from "socket.io-client";
+import { API_BASE_URL } from "../config/api";
 import {
   ArrowLeft,
   Calendar,
@@ -135,10 +136,10 @@ export default function TaskDetailPage() {
         const token = localStorage.getItem("token");
 
         const [taskRes, commentsRes] = await Promise.all([
-          axios.get(`http://localhost:3000/tasks/${id}`, {
+          axios.get(`${API_BASE_URL}/tasks/${id}`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          axios.get(`http://localhost:3000/tasks/${id}/comments`, {
+          axios.get(`${API_BASE_URL}/tasks/${id}/comments`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);
@@ -171,7 +172,7 @@ export default function TaskDetailPage() {
   useEffect(() => {
     if (!id) return;
 
-    const socket = io("http://localhost:3000");
+    const socket = io(API_BASE_URL);
 
     // Join room for this specific task
     socket.emit("task:join", id);
@@ -219,7 +220,7 @@ export default function TaskDetailPage() {
       setIsUpdatingStatus(true);
       const token = localStorage.getItem("token");
       const response = await axios.put(
-        `http://localhost:3000/tasks/${task.id}`,
+        `${API_BASE_URL}/tasks/${task.id}`,
         {
           title: task.title,
           description: task.description,
@@ -277,7 +278,7 @@ export default function TaskDetailPage() {
       }
 
       const response = await axios.post(
-        `http://localhost:3000/tasks/${id}/comments`,
+        `${API_BASE_URL}/tasks/${id}/comments`,
         formData,
         {
           headers: {
@@ -328,7 +329,7 @@ export default function TaskDetailPage() {
       setIsUpdatingComment(true);
       const token = localStorage.getItem("token");
       const response = await axios.put(
-        `http://localhost:3000/tasks/${id}/comments/${commentId}`,
+        `${API_BASE_URL}/tasks/${id}/comments/${commentId}`,
         { content: editingContent.trim() },
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -354,12 +355,9 @@ export default function TaskDetailPage() {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(
-        `http://localhost:3000/tasks/${id}/comments/${commentId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      await axios.delete(`${API_BASE_URL}/tasks/${id}/comments/${commentId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       setComments((prev) => prev.filter((c) => c.id !== commentId));
     } catch (err) {
@@ -492,9 +490,9 @@ export default function TaskDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-zinc-900 dark:text-white truncate">
-                     {task.assignee_email || "User #" + task.assignee_id}
-                      : task.assignee_email ||
-                        `User #${task.assignee_id || "Unassigned"}`
+                    {task.assignee_email || "User #" + task.assignee_id}:
+                    task.assignee_email || `User #$
+                    {task.assignee_id || "Unassigned"}`
                   </p>
                   <span className="text-[11px] text-zinc-500 font-medium">
                     ID: {task.assignee_id || "None"}
@@ -511,8 +509,8 @@ export default function TaskDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-zinc-900 dark:text-white truncate">
-                     {task.creator_email || "User #" + task.creator_id}
-                      : task.creator_email || `User #{task.creator_id}
+                    {task.creator_email || "User #" + task.creator_id}:
+                    task.creator_email || `User #{task.creator_id}
                   </p>
                   <span className="text-[11px] text-zinc-500 font-medium">
                     ID: {task.creator_id}

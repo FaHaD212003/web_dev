@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { API_BASE_URL } from "../config/api";
 
 const toDateTimeLocal = (isoString) => {
   if (!isoString) return "";
@@ -27,14 +28,11 @@ export default function TaskForm({ isOpen, onClose, onSubmit, initialData }) {
       const fetchRoster = async () => {
         try {
           const token = localStorage.getItem("token");
-          const response = await axios.get(
-            "http://localhost:3000/users/employees",
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
+          const response = await axios.get(`${API_BASE_URL}/users/employees`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
             },
-          );
+          });
           setRoster(response.data);
         } catch (err) {
           setRoster([]);

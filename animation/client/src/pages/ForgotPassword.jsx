@@ -3,6 +3,7 @@ import axios from "axios";
 import HalftoneReveal from "../components/HalftoneReveal";
 import Input from "../components/Input";
 import SubmitButton from "../components/SubmitButton";
+import { API_BASE_URL } from "../config/api";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -17,12 +18,9 @@ export default function ForgotPassword() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(
-        "http://localhost:3000/forgot-password",
-        {
-          username: email,
-        },
-      );
+      const response = await axios.post(`${API_BASE_URL}/forgot-password`, {
+        username: email,
+      });
 
       if (response.status === 200 || response.status === 201) {
         setMessage(

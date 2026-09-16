@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { API_BASE_URL } from "../config/api";
 import {
   ArrowLeft,
   UserRound,
@@ -81,7 +82,7 @@ export default function AdminUserDetail() {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          `http://localhost:3000/users/${id}/details`,
+          `${API_BASE_URL}/users/${id}/details`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -118,12 +119,9 @@ export default function AdminUserDetail() {
 
   const refreshUser = async () => {
     const token = localStorage.getItem("token");
-    const response = await axios.get(
-      `http://localhost:3000/users/${id}/details`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    );
+    const response = await axios.get(`${API_BASE_URL}/users/${id}/details`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     setData(response.data);
   };
 
@@ -132,7 +130,7 @@ export default function AdminUserDetail() {
       setIsUpdating(true);
       setActionError("");
       const token = localStorage.getItem("token");
-      await axios.patch(`http://localhost:3000/users/${id}/access`, payload, {
+      await axios.patch(`${API_BASE_URL}/users/${id}/access`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
       await refreshUser();

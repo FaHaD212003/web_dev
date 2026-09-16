@@ -16,6 +16,7 @@ import interactionPlugin from "@fullcalendar/react/interaction";
 import classicThemePlugin from "@fullcalendar/react/themes/classic";
 import { useSelector, useDispatch } from "react-redux";
 import { updateUser } from "../store/authSlice";
+import { API_BASE_URL } from "../config/api";
 
 import "@fullcalendar/react/skeleton.css";
 import "@fullcalendar/react/themes/classic/theme.css";
@@ -40,7 +41,6 @@ export default function Calendar() {
   const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
 
-  
   useEffect(() => {
     const googleConnected = searchParams.get("google_connected");
     const token = searchParams.get("token");
@@ -64,12 +64,11 @@ export default function Calendar() {
     }
   }, [searchParams, dispatch, navigate]);
 
- 
   const fetchTasks = useCallback(async () => {
     try {
       setIsLoading(true);
       const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:3000/tasks/calendar", {
+      const response = await axios.get(`${API_BASE_URL}/tasks/calendar`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -87,14 +86,13 @@ export default function Calendar() {
     fetchTasks();
   }, [fetchTasks]);
 
-
   useEffect(() => {
     if (!isAdmin) return;
 
     const fetchUsers = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get("http://localhost:3000/users/employees", {
+        const res = await axios.get(`${API_BASE_URL}/users/employees`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUsers(res.data || []);
@@ -106,12 +104,10 @@ export default function Calendar() {
     fetchUsers();
   }, [isAdmin]);
 
-  
   const handleConnectGoogle = () => {
-    window.location.href = "http://localhost:3000/auth/google";
+    window.location.href = `${API_BASE_URL}/auth/google`;
   };
 
- 
   const handleSyncGoogleTasks = async () => {
     try {
       setIsSyncing(true);
@@ -120,7 +116,7 @@ export default function Calendar() {
       const token = localStorage.getItem("token");
 
       const res = await axios.post(
-        "http://localhost:3000/tasks/sync-google",
+        `${API_BASE_URL}/tasks/sync-google`,
         {},
         { headers: { Authorization: `Bearer ${token}` } },
       );

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { Link, useOutletContext } from "react-router-dom";
+import { API_BASE_URL } from "../config/api";
 import {
   Bar,
   BarChart,
@@ -46,7 +47,7 @@ export default function AdminDashboard() {
         setIsLoading(true);
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          "http://localhost:3000/users/dashboard-stats",
+          `${API_BASE_URL}/users/dashboard-stats`,
           {
             params: { range },
             headers: { Authorization: `Bearer ${token}` },

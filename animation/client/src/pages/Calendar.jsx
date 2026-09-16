@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
+import { API_BASE_URL } from "../config/api";
 import {
   ChevronLeft,
   ChevronRight,
@@ -125,7 +126,7 @@ export default function CalendarPage() {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      let url = "http://localhost:3000/tasks/calendar";
+      let url = `${API_BASE_URL}/tasks/calendar`;
       if (isAdmin && selectedUserFilter?.id) {
         url += `?userId=${selectedUserFilter.id}`;
       }
@@ -149,7 +150,7 @@ export default function CalendarPage() {
     const fetchUsers = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("http://localhost:3000/users/employees", {
+        const response = await axios.get(`${API_BASE_URL}/users/employees`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUsersList(response.data || []);
@@ -169,10 +170,7 @@ export default function CalendarPage() {
   // Close User Filter Popover on Outside Click
   useEffect(() => {
     const handleOutsideClick = (e) => {
-      if (
-        userFilterRef.current &&
-        !userFilterRef.current.contains(e.target)
-      ) {
+      if (userFilterRef.current && !userFilterRef.current.contains(e.target)) {
         setIsUserFilterOpen(false);
       }
     };
@@ -315,20 +313,20 @@ export default function CalendarPage() {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "http://localhost:3000/auth/send-google-verify",
+        `${API_BASE_URL}/auth/send-google-verify`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       setEmailSentStatus("success");
       setEmailStatusMsg(
         response.data.message ||
-          "Verification email sent! Please check your inbox and click the verify button."
+          "Verification email sent! Please check your inbox and click the verify button.",
       );
     } catch (err) {
       setEmailSentStatus("error");
       setEmailStatusMsg(
-        err.response?.data?.message || "Failed to send verification email."
+        err.response?.data?.message || "Failed to send verification email.",
       );
     } finally {
       setIsSendingEmail(false);
@@ -342,14 +340,17 @@ export default function CalendarPage() {
       return;
     }
 
-    let icsContent = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Regulate Task Management//EN\n";
+    let icsContent =
+      "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Regulate Task Management//EN\n";
 
     tasks.forEach((t) => {
       if (!t.due_date) return;
       const dueDate = new Date(t.due_date);
-      const icsTime = dueDate.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+      const icsTime =
+        dueDate.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
       const endDate = new Date(dueDate.getTime() + 60 * 60 * 1000);
-      const icsEndTime = endDate.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+      const icsEndTime =
+        endDate.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 
       icsContent += `BEGIN:VEVENT\n`;
       icsContent += `UID:task-${t.id}@regulate.app\n`;
@@ -364,10 +365,15 @@ export default function CalendarPage() {
 
     icsContent += "END:VCALENDAR";
 
-    const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+    const blob = new Blob([icsContent], {
+      type: "text/calendar;charset=utf-8",
+    });
     const link = document.createElement("a");
     link.href = window.URL.createObjectURL(blob);
-    link.setAttribute("download", `regulate-tasks-${new Date().toISOString().split("T")[0]}.ics`);
+    link.setAttribute(
+      "download",
+      `regulate-tasks-${new Date().toISOString().split("T")[0]}.ics`,
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -379,13 +385,12 @@ export default function CalendarPage() {
     const startDate = new Date(task.due_date);
     const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hr default duration
 
-    const formatGDate = (d) =>
-      d.toISOString().replace(/-|:|\.\d+/g, "");
+    const formatGDate = (d) => d.toISOString().replace(/-|:|\.\d+/g, "");
 
     const dates = `${formatGDate(startDate)}/${formatGDate(endDate)}`;
     const title = encodeURIComponent(`Task: ${task.title}`);
     const details = encodeURIComponent(
-      `${task.description || ""}\n\nView in Regulate: http://localhost:5173/tasks/${task.id}`
+      `${task.description || ""}\n\nView in Regulate: http://localhost:5173/tasks/${task.id}`,
     );
 
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}`;
@@ -398,7 +403,7 @@ export default function CalendarPage() {
     return usersList.filter(
       (u) =>
         u.username?.toLowerCase().includes(q) ||
-        u.email?.toLowerCase().includes(q)
+        u.email?.toLowerCase().includes(q),
     );
   }, [usersList, userSearchQuery]);
 
@@ -526,7 +531,9 @@ export default function CalendarPage() {
                         </div>
                         <span>All Users</span>
                       </div>
-                      {!selectedUserFilter && <CheckCircle2 className="h-3.5 w-3.5" />}
+                      {!selectedUserFilter && (
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                      )}
                     </button>
 
                     {filteredUsers.map((u) => {
@@ -558,7 +565,9 @@ export default function CalendarPage() {
                               </p>
                             </div>
                           </div>
-                          {isSelected && <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />}
+                          {isSelected && (
+                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                          )}
                         </button>
                       );
                     })}
@@ -682,8 +691,8 @@ export default function CalendarPage() {
                           isDateToday
                             ? "bg-blue-600 text-white font-black shadow-md shadow-blue-500/30"
                             : isCurrentMonth
-                            ? "text-zinc-800 dark:text-zinc-200"
-                            : "text-zinc-400 dark:text-zinc-600"
+                              ? "text-zinc-800 dark:text-zinc-200"
+                              : "text-zinc-400 dark:text-zinc-600"
                         }`}
                       >
                         {date.getDate()}
@@ -700,7 +709,8 @@ export default function CalendarPage() {
                       {dayTasks.slice(0, 3).map((task) => {
                         const dueDateObj = new Date(task.due_date);
                         const isOverdue =
-                          dueDateObj < new Date() && task.status !== "completed";
+                          dueDateObj < new Date() &&
+                          task.status !== "completed";
                         const styles = getStatusStyles(task.status, isOverdue);
 
                         const timeStr = dueDateObj.toLocaleTimeString("en-US", {
@@ -832,11 +842,14 @@ export default function CalendarPage() {
                         dueDate < new Date() && task.status !== "completed";
                       const styles = getStatusStyles(task.status, isOverdue);
 
-                      const timeFormatted = dueDate.toLocaleTimeString("en-US", {
-                        hour: "numeric",
-                        minute: "2-digit",
-                        hour12: true,
-                      });
+                      const timeFormatted = dueDate.toLocaleTimeString(
+                        "en-US",
+                        {
+                          hour: "numeric",
+                          minute: "2-digit",
+                          hour12: true,
+                        },
+                      );
 
                       return (
                         <div
@@ -924,8 +937,9 @@ export default function CalendarPage() {
                       Google Account Verified
                     </p>
                     <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
-                      Your account ({currentUser.email}) is verified as an active
-                      Google user. You can export tasks to Google Calendar directly.
+                      Your account ({currentUser.email}) is verified as an
+                      active Google user. You can export tasks to Google
+                      Calendar directly.
                     </p>
                   </div>
                 </div>
@@ -941,7 +955,9 @@ export default function CalendarPage() {
                   </button>
 
                   <p className="text-[11px] text-zinc-500 text-center leading-relaxed">
-                    Import this .ics file into your Google Calendar (Settings &rarr; Import &amp; Export) to view all tasks with due dates in your personal Google Calendar.
+                    Import this .ics file into your Google Calendar (Settings
+                    &rarr; Import &amp; Export) to view all tasks with due dates
+                    in your personal Google Calendar.
                   </p>
                 </div>
               </div>
@@ -955,7 +971,9 @@ export default function CalendarPage() {
                       Verification Required
                     </p>
                     <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5 leading-relaxed">
-                      To enable Google Calendar synchronization, we need to verify your Google email address (<strong>{currentUser?.email}</strong>).
+                      To enable Google Calendar synchronization, we need to
+                      verify your Google email address (
+                      <strong>{currentUser?.email}</strong>).
                     </p>
                   </div>
                 </div>
@@ -997,7 +1015,9 @@ export default function CalendarPage() {
                     ) : (
                       <>
                         <Send className="h-4 w-4" />
-                        <span>Send Verification Email to {currentUser?.email}</span>
+                        <span>
+                          Send Verification Email to {currentUser?.email}
+                        </span>
                       </>
                     )}
                   </button>
