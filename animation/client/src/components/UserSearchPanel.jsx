@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import axios from "axios";
 import { Search, UserRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../config/api";
 
 export default function UserSearchPanel({
   title = "Search Users",
@@ -29,7 +30,7 @@ export default function UserSearchPanel({
         }
 
         const token = localStorage.getItem("token");
-        const response = await axios.get("http://localhost:3000/users/search", {
+        const response = await axios.get(`${API_BASE_URL}/users/search`, {
           params: { query: searchQuery, page: pageNumber, limit: 15 },
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -70,14 +71,13 @@ export default function UserSearchPanel({
     [],
   );
 
-  // Debounced search query change -> Resets to Page 1
   useEffect(() => {
     let isActive = true;
     const timer = setTimeout(() => {
       if (isActive) {
         fetchUsers(query, 1, true);
       }
-    }, 250);
+    }, 500);
 
     return () => {
       isActive = false;
@@ -85,7 +85,6 @@ export default function UserSearchPanel({
     };
   }, [query, fetchUsers]);
 
-  // Infinite Scroll IntersectionObserver
   useEffect(() => {
     if (!hasMore || isLoadingInitial || isLoadingMore) return;
 

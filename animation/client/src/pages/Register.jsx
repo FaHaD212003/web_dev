@@ -6,6 +6,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { loginSuccess } from "../store/authSlice";
 import Input from "../components/Input";
 import SubmitButton from "../components/SubmitButton";
+import { API_BASE_URL } from "../config/api";
 
 export default function Register() {
   const [username, setUsername] = useState("");
@@ -46,7 +47,7 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:3000/register", {
+      const response = await axios.post(`${API_BASE_URL}/register`, {
         username: username.trim(),
         email: email.trim(),
         password: password,
@@ -72,7 +73,7 @@ export default function Register() {
   };
 
   const handleGoogleRegister = () => {
-    window.location.href = "http://localhost:3000/auth/google";
+    window.location.href = `${API_BASE_URL}/auth/google`;
   };
 
   return (

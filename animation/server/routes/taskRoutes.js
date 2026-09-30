@@ -8,11 +8,13 @@ import {
   createTask,
   updateTask,
   deleteTask,
+  syncGoogleTasks,
 } from "../controllers/taskController.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+router.post("/sync-google", verifyToken, syncGoogleTasks);
 router.get("/calendar", verifyToken, getCalendarTasks);
 router.get("/my-tasks", verifyToken, getMyTasks);
 router.get("/assigned-tasks", verifyToken, getAssignedTasks);

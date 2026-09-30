@@ -84,7 +84,8 @@ export const createComment = async (req, res) => {
         },
       );
 
-      file_url = `http://localhost:3000/tasks/comments/attachment/${encodeURIComponent(file_key)}`;
+      const serverUrl = process.env.SERVER_URL || "http://localhost:3000";
+      file_url = `${serverUrl}/tasks/comments/attachment/${encodeURIComponent(file_key)}`;
     }
 
     const insertResult = await db.query(

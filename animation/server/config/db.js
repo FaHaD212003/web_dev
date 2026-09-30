@@ -3,17 +3,31 @@ import env from "dotenv";
 
 env.config();
 
-const db = new pg.Client({
-  user: process.env.PG_USER,
-  host: process.env.PG_HOST,
-  database: process.env.PG_DATABASE,
-  password: process.env.PG_PASSWORD,
-  port: process.env.PG_PORT,
-});
+const db = process.env.DATABASE_URL
+  ? new pg.Client({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+    })
+  : new pg.Client({
+      user: process.env.PG_USER,
+      host: process.env.PG_HOST,
+      database: process.env.PG_DATABASE,
+      password: process.env.PG_PASSWORD,
+      port: process.env.PG_PORT,
+    });
 
 const ensureUserColumns = async () => {
   await db.query(
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(255)",
+  );
+  await db.query(
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS google_access_token TEXT",
+  );
+  await db.query(
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS google_refresh_token TEXT",
+  );
+  await db.query(
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS google_token_expires_at TIMESTAMPTZ",
   );
 };
 

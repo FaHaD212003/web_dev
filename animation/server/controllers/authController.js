@@ -196,7 +196,8 @@ export const forgotPassword = async (req, res) => {
       },
     });
 
-    const resetURL = `http://localhost:5173/reset-password/${token}`;
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+    const resetURL = `${clientUrl}/reset-password/${token}`;
 
     const mailOptions = {
       to: email,
@@ -289,7 +290,8 @@ export const sendGoogleVerificationEmail = async (req, res) => {
       },
     });
 
-    const verifyURL = `http://localhost:5173/verify-google?token=${token}`;
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+    const verifyURL = `${clientUrl}/verify-google?token=${token}`;
 
     const mailOptions = {
       to: userEmail,

@@ -1,3 +1,4 @@
+import axios from "axios";
 import db from "../config/db.js";
 import { sendTaskNotification } from "../utils/sendEmail.js";
 import {
@@ -359,5 +360,152 @@ export const deleteTask = async (req, res) => {
     res.status(200).json({ message: "Task deleted successfully." });
   } catch (err) {
     res.status(500).json({ message: "Failed to delete task." });
+  }
+};
+
+export const syncGoogleTasks = async (req, res) => {
+  const currentUserId = req.user.id;
+
+  try {
+    const userResult = await db.query(
+      "SELECT google_access_token, google_refresh_token, is_google_user FROM users WHERE id = $1",
+      [currentUserId],
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    let googleToken = userResult.rows[0].google_access_token;
+
+    if (!googleToken) {
+      return res.status(400).json({
+        message:
+          "Google account is not connected. Please verify with Google first.",
+        needAuth: true,
+      });
+    }
+
+    let googleResponse;
+    try {
+      googleResponse = await axios.get(
+        "https://tasks.googleapis.com/tasks/v1/lists/@default/tasks",
+        {
+          headers: {
+            Authorization: `Bearer ${googleToken}`,
+          },
+          params: {
+            showCompleted: true,
+            showHidden: true,
+          },
+        },
+      );
+    } catch (apiErr) {
+      if (
+        apiErr.response?.status === 401 &&
+        userResult.rows[0].google_refresh_token
+      ) {
+        try {
+          const refreshRes = await axios.post(
+            "https://oauth2.googleapis.com/token",
+            {
+              client_id: process.env.GOOGLE_CLIENT_ID,
+              client_secret: process.env.GOOGLE_CLIENT_SECRET,
+              refresh_token: userResult.rows[0].google_refresh_token,
+              grant_type: "refresh_token",
+            },
+          );
+
+          if (refreshRes.data?.access_token) {
+            googleToken = refreshRes.data.access_token;
+            await db.query(
+              "UPDATE users SET google_access_token = $1 WHERE id = $2",
+              [googleToken, currentUserId],
+            );
+
+            googleResponse = await axios.get(
+              "https://tasks.googleapis.com/tasks/v1/lists/@default/tasks",
+              {
+                headers: {
+                  Authorization: `Bearer ${googleToken}`,
+                },
+                params: {
+                  showCompleted: true,
+                  showHidden: true,
+                },
+              },
+            );
+          } else {
+            throw apiErr;
+          }
+        } catch (refreshErr) {
+          return res.status(401).json({
+            message:
+              "Google session expired. Please re-authenticate with Google.",
+            needAuth: true,
+          });
+        }
+      } else {
+        throw apiErr;
+      }
+    }
+
+    const items = googleResponse.data.items || [];
+
+    if (items.length === 0) {
+      return res.status(200).json({
+        message: "No tasks found in your Google Tasks account.",
+        syncedCount: 0,
+      });
+    }
+
+    let insertedCount = 0;
+
+    for (const gTask of items) {
+      if (!gTask.title || gTask.title.trim() === "") continue;
+
+      const title = gTask.title.trim();
+      const description = gTask.notes || "";
+      const status = gTask.status === "completed" ? "completed" : "pending";
+      const dueDate = gTask.due ? new Date(gTask.due).toISOString() : null;
+
+      const existing = await db.query(
+        `SELECT id FROM tasks 
+         WHERE creator_id = $1 AND title = $2`,
+        [currentUserId, title],
+      );
+
+      if (existing.rows.length === 0) {
+        await db.query(
+          `INSERT INTO tasks (title, description, status, due_date, creator_id, assignee_id)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [title, description, status, dueDate, currentUserId, currentUserId],
+        );
+        insertedCount++;
+      } else {
+        await db.query(
+          `UPDATE tasks 
+           SET status = $1, due_date = COALESCE($2, due_date), updated_at = NOW()
+           WHERE id = $3`,
+          [status, dueDate, existing.rows[0].id],
+        );
+      }
+    }
+
+    res.status(200).json({
+      message: `Successfully synchronized ${insertedCount} new tasks from Google Tasks!`,
+      syncedCount: insertedCount,
+      totalGoogleTasks: items.length,
+    });
+  } catch (err) {
+    console.error(
+      "Error syncing Google Tasks:",
+      err.response?.data || err.message,
+    );
+    res.status(500).json({
+      message:
+        err.response?.data?.error?.message ||
+        "Failed to synchronize tasks from Google.",
+    });
   }
 };

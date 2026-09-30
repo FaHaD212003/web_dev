@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { io } from "socket.io-client";
+import { API_BASE_URL } from "../config/api";
 import {
   Bell,
   CheckCheck,
@@ -87,12 +88,9 @@ export default function NotificationCenter({ user, theme = "dark" }) {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const response = await axios.get(
-          "http://localhost:3000/notifications",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
+        const response = await axios.get(`${API_BASE_URL}/notifications`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
         if (isActive) {
           setNotifications(response.data.notifications || []);
@@ -117,7 +115,7 @@ export default function NotificationCenter({ user, theme = "dark" }) {
   useEffect(() => {
     if (!user?.id) return;
 
-    const socket = io("http://localhost:3000", {
+    const socket = io(API_BASE_URL, {
       transports: ["websocket", "polling"],
     });
 
@@ -195,7 +193,7 @@ export default function NotificationCenter({ user, theme = "dark" }) {
     try {
       const token = localStorage.getItem("token");
       await axios.patch(
-        "http://localhost:3000/notifications/mark-all-read",
+        `${API_BASE_URL}/notifications/mark-all-read`,
         {},
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -210,7 +208,7 @@ export default function NotificationCenter({ user, theme = "dark" }) {
   const handleClearAll = async () => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete("http://localhost:3000/notifications/clear-all", {
+      await axios.delete(`${API_BASE_URL}/notifications/clear-all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -227,7 +225,7 @@ export default function NotificationCenter({ user, theme = "dark" }) {
       try {
         const token = localStorage.getItem("token");
         await axios.patch(
-          `http://localhost:3000/notifications/${notif.id}/read`,
+          `${API_BASE_URL}/notifications/${notif.id}/read`,
           {},
           { headers: { Authorization: `Bearer ${token}` } },
         );
@@ -252,7 +250,7 @@ export default function NotificationCenter({ user, theme = "dark" }) {
     e.stopPropagation();
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:3000/notifications/${notifId}`, {
+      await axios.delete(`${API_BASE_URL}/notifications/${notifId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -324,9 +322,7 @@ export default function NotificationCenter({ user, theme = "dark" }) {
                 }}
                 title="View all notifications"
                 className="flex items-center gap-1 text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:text-cyan-600 dark:hover:text-cyan-400 px-2 py-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-              >
-                
-              </button>
+              ></button>
 
               {unreadCount > 0 && (
                 <button

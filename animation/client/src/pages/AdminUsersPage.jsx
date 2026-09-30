@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Users, ShieldCheck, Search } from "lucide-react";
 import UserSearchPanel from "../components/UserSearchPanel";
+import { API_BASE_URL } from "../config/api";
 
 export default function AdminUsersPage() {
   const [totalUsers, setTotalUsers] = useState(0);
@@ -14,7 +15,7 @@ export default function AdminUsersPage() {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          "http://localhost:3000/users/dashboard-stats",
+          `${API_BASE_URL}/users/dashboard-stats`,
           {
             params: { range: "monthly" },
             headers: { Authorization: `Bearer ${token}` },

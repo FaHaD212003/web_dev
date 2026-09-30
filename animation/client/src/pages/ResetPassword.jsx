@@ -4,6 +4,7 @@ import axios from "axios";
 import HalftoneReveal from "../components/HalftoneReveal";
 import Input from "../components/Input";
 import SubmitButton from "../components/SubmitButton";
+import { API_BASE_URL } from "../config/api";
 
 export default function ResetPassword() {
   const { token } = useParams();
@@ -29,7 +30,7 @@ export default function ResetPassword() {
 
     try {
       const response = await axios.post(
-        `http://localhost:3000/reset-password/${token}`,
+        `${API_BASE_URL}/reset-password/${token}`,
         {
           password: password,
         },
